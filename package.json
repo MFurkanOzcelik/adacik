@@ -1,0 +1,61 @@
+{
+  "name": "klon-notch",
+  "productName": "Klon Notch",
+  "version": "1.0.0",
+  "description": "A floating glass notch for Windows with a grid of tools",
+  "author": "Klon Notch",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis portable"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^45.3.4",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "qrcode-generator": "^1.4.4"
+  },
+  "build": {
+    "appId": "com.klonnotch.app",
+    "productName": "Klon Notch",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "*.js",
+      "*.html",
+      "*.css",
+      "*.ps1",
+      "vendor/**",
+      "build/icon.png",
+      "package.json",
+      "!dist/**"
+    ],
+    "asarUnpack": [
+      "*.ps1"
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Klon Notch",
+      "runAfterFinish": true,
+      "installerLanguages": [
+        "tr_TR"
+      ],
+      "language": "1055"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    }
+  }
+}

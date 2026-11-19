@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'">
+<title>Ekran görüntüsü</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; cursor: crosshair; user-select: none;
+    font: 500 13px "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+  #bg { position: fixed; inset: 0; width: 100%; height: 100%; }
+  #shade { position: fixed; inset: 0; background: rgba(0, 0, 0, .42); transition: opacity .15s; }
+  #sel { position: fixed; display: none; outline: 1.5px solid #fff; box-shadow: 0 0 0 9999px rgba(0, 0, 0, .42); background: transparent; }
+  #size { position: fixed; display: none; padding: 3px 7px; border-radius: 6px; background: rgba(20, 20, 22, .85); color: #fff; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  #hint { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); padding: 8px 16px; border-radius: 18px;
+    background: rgba(32, 32, 36, .9); color: rgba(255, 255, 255, .9); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); white-space: nowrap; transition: opacity .2s; }
+  #hint b { font-weight: 600; color: #fff; }
+  body.dragging #shade { opacity: 0; }
+  body.dragging #hint { opacity: 0; }
+  body.picking { cursor: crosshair; }
+  body.picking #shade { opacity: 0; }
+  #loupe { position: fixed; left: 0; top: 0; width: 154px; pointer-events: none; border-radius: 16px; overflow: hidden; background: #111;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 12px 32px rgba(0,0,0,.5); will-change: transform; }
+  #loupe canvas { display: block; width: 154px; height: 154px; image-rendering: pixelated; }
+  #loupe .lhex { height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: #fff; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  #loupe .lhex i { width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.3); }
+</style>
+</head>
+<body>
+<img id="bg" alt="">
+<div id="shade"></div>
+<div id="sel"></div>
+<div id="size"></div>
+<div id="hint">Seçmek için <b>sürükle</b> · Tüm ekran için <b>tıkla</b> · İptal için <b>Esc</b></div>
+<script src="capture.js"></script>
+</body>
+</html>
