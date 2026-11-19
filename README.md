@@ -67,9 +67,7 @@ Bağlantı ya da metinden şık QR kodlar: stil, köşe, renk, logo ve etiket. P
 
 ## 📦 Kurulum
 
-1. [Son sürüm](https://github.com/MFurkanOzcelik/adacik/releases/latest) sayfasından indir:
-   - **`Adacik-Setup-x.x.x.exe`** — kurulum (Başlat menüsü ve masaüstü kısayolu ekler)
-   - **`Adacik-x.x.x-portable.exe`** — kurulum gerektirmez
+1. [Son sürüm](https://github.com/MFurkanOzcelik/adacik/releases/latest) sayfasından **`Adacik-Setup-x.x.x.exe`** dosyasını indir (Başlat menüsü ve masaüstü kısayolu ekler; eski sürümün üzerine kurulur, ayarlar korunur).
 2. Çalıştır. Ada ekranın üstünde belirir; fareyi üzerine getir.
 
 > [!NOTE]
@@ -91,7 +89,7 @@ git clone https://github.com/MFurkanOzcelik/adacik.git
 cd adacik
 npm install
 npm start          # geliştirme modunda çalıştır
-npm run dist       # dist/ klasörüne kurulum ve portable exe üret
+npm run dist       # dist/ klasörüne kurulum dosyası üret
 ```
 
 Electron ile yazıldı. Windows tarafındaki işler (medya oturumu, ses, bildirimler, OCR, takvim) küçük PowerShell yardımcılarıyla Windows'un kendi API'lerinden okunur.
