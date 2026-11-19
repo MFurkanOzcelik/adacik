@@ -62,7 +62,9 @@ function create() {
   win.webContents.on('console-message', (_e, ...a) => console.log('[renderer]', ...a.map(x => (x && x.message) || x)));
   win.webContents.on('render-process-gone', (_e, d) => console.log('GONE', d));
   win.loadFile('index.html');
-  win.once('ready-to-show', () => win.showInactive());
+  // The PowerShell helper compiles C# when it starts and competes for the CPU with the first paint,
+  // so it starts once the island is on screen.
+  win.once('ready-to-show', () => { win.showInactive(); setTimeout(startMedia, 400); });
   (function loop() { setTimeout(loop, tick()); })();
 }
 
@@ -271,8 +273,12 @@ function accentFromImage(file) {
   return '#' + [R, G, B].map(v => Math.round((v + m) * 255).toString(16).padStart(2, '0')).join('');
 }
 ipcMain.handle('accent:wall', (_, file) => {
-  const f = (process.env.KLON_TEST && file) || wallpaperFile();
-  return f ? accentFromImage(f) : null;
+  if (process.env.KLON_TEST && file) return accentFromImage(file);
+  const f = wallpaperFile(); if (!f) return null;
+  let t = 0; try { t = fs.statSync(f).mtimeMs; } catch {}
+  const c = store.wallAccent;   // decoding a 4K wallpaper takes a while: only when it changed
+  if (c && c.t === t) return c.color;
+  const color = accentFromImage(f); store.wallAccent = { t, color }; saveStore(); return color;
 });
 let wallStamp = 0;
 setInterval(() => {   // notice wallpaper changes (incl. slideshows) within ~20 s
@@ -378,10 +384,20 @@ ipcMain.handle('translate', async (_, { text, from, to }) => {
   }
 });
 ipcMain.handle('cal:sync', () => syncCalendars());
-let batteryPresent = null;
-ipcMain.handle('battery:present', () => batteryPresent !== null ? batteryPresent : new Promise(res => {
-  execFile('powershell', ['-NoProfile', '-NonInteractive', '-Command', '@(Get-CimInstance Win32_Battery).Count'], { windowsHide: true }, (e, out) => { batteryPresent = !e && parseInt(out, 10) > 0; res(batteryPresent); });
-}));
+// Asking WMI starts a PowerShell (~0.5–1 s), so startup uses the answer saved last time and checks again later.
+let batteryPresent = null, batteryCheck = null;
+function checkBattery() {
+  return batteryCheck || (batteryCheck = new Promise(res => execFile('powershell', ['-NoProfile', '-NonInteractive', '-Command', '@(Get-CimInstance Win32_Battery).Count'], { windowsHide: true }, (e, out) => {
+    const v = !e && parseInt(out, 10) > 0;
+    if (v !== batteryPresent && win && !win.isDestroyed()) win.webContents.send('battery:present', v);
+    batteryPresent = v; store.batteryPresent = v; saveStore(); res(v);
+  })));
+}
+ipcMain.handle('battery:present', () => {
+  // never hold up the first paint: answer with what we know, the check reports back via 'battery:present'
+  if (batteryPresent === null) { if (typeof store.batteryPresent === 'boolean') batteryPresent = store.batteryPresent; setTimeout(checkBattery, 4000); }
+  return batteryPresent;
+});
 
 // ---------- quick launch ----------
 const tok = t => String(t || '').replace(/^%(\w+)%$/, (m, n) => { try { return app.getPath(n); } catch { return m; } });
@@ -637,11 +653,10 @@ app.whenReady().then(() => {
   prevCpu = cpuNow();
   setTimeout(loadApps, 2500);
   calState = store.calCache || calState;
+  create();   // the window first: everything below can happen while it loads
   phone = new Phone({ store, save: saveStore, emit: phoneEmit, downloads: app.getPath('downloads'), test: !!process.env.KLON_TEST });
   setTimeout(syncCalendars, 6000); setInterval(syncCalendars, 15 * 60 * 1000);
-  create();
   setInterval(pollClipText, 1500);
-  startMedia();
   if (store.settings && store.settings.onTop === false) win.setAlwaysOnTop(false);
   systemPreferences.on('accent-color-changed', (_e, c) => win && win.webContents.send('accent', '#' + String(c).slice(0, 6)));
   globalShortcut.register('Control+Alt+N', () => win.webContents.send('toggle-pin'));

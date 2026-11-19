@@ -240,8 +240,8 @@ function paintInfo() {
   }
 }
 setInterval(paintInfo, 5000);
+api.on('battery:present', v => { battery.present = v; paintInfo(); if (!ui.open) applyClosedSize(); });
 (async () => {
-  battery.present = await api.invoke('battery:present');
   try {
     const bm = await navigator.getBattery();
     const upd = () => { battery.level = bm.level; battery.charging = bm.charging; paintInfo(); };
@@ -1776,7 +1776,8 @@ function vSettings(root) {
 
 /* ---------- boot ---------- */
 (async () => {
-  const st = await api.invoke('store:get');
+  // everything the first paint needs, asked for at once
+  const [st, acc, wall, cal, bat] = await Promise.all([api.invoke('store:get'), api.invoke('accent:get'), api.invoke('accent:wall'), api.invoke('cal:get'), api.invoke('battery:present')]);
   S = { ...S, ...st, settings: { ...S.settings, ...(st.settings || {}) } };
   if (!st.settings || !st.settings.accentMode) S.settings.accentMode = 'windows';
   S.notes = S.notes && S.notes.length ? S.notes : [{ id: 1, text: '' }];
@@ -1784,10 +1785,9 @@ function vSettings(root) {
   if (S.appIconsV !== 2) { S.appIcons = {}; S.appIconsV = 2; save('appIcons'); save('appIconsV'); }   // icons saved before 1.1.1 could be upside down
   clips = st.clips || [];
   Object.assign(T, S.settings.timer || {}); T.left = T.dur;
-  winAccent = await api.invoke('accent:get');
-  wallAccent = await api.invoke('accent:wall');
-  Object.assign(CAL, await api.invoke('cal:get'));
-  applyTheme();
-  if (S.settings.awake) api.send('awake', true);
+  winAccent = acc; wallAccent = wall; Object.assign(CAL, cal); battery.present = !!bat;
+  applyTheme(); paintInfo();
   drawArt($('#miniArt')); applyClosedSize();
+  requestAnimationFrame(() => requestAnimationFrame(() => { shell.classList.replace('boot', 'intro'); setTimeout(() => shell.classList.remove('intro'), 400); }));   // later size changes animate again
+  if (S.settings.awake) api.send('awake', true);
 })();
