@@ -63,12 +63,12 @@ function create() {
   win.webContents.on('render-process-gone', (_e, d) => console.log('GONE', d));
   win.loadFile('index.html');
   win.once('ready-to-show', () => win.showInactive());
-  setInterval(tick, 33);
+  (function loop() { setTimeout(loop, tick()); })();
 }
 
 // Hover detection runs here because the window is click-through while collapsed.
 function tick() {
-  if (!win || win.isDestroyed()) return;
+  if (!win || win.isDestroyed()) return 250;
   const p = screen.getCursorScreenPoint();
   const b = win.getBounds();
   const x = p.x - b.x, y = p.y - b.y;
@@ -90,6 +90,9 @@ function tick() {
       if (now - leaveSince > 320) { hovering = false; win.webContents.send('hover', false); }
     }
   }
+  // 30×/s near the island; far away (or hidden) a few times a second is plenty to notice the approach
+  const far = fsHidden || capWin || y > hh + 160 || Math.abs(x - cx) > hw + 220;
+  return inside || hovering || !far ? 33 : 110;
 }
 
 // ---------- clipboard history: text and images, pinning ----------
@@ -539,8 +542,14 @@ function helperLine(m) {
   if (typeof m.cb === 'number') onClipSeq(m.cb);
   if (typeof m.fs === 'boolean') onFullscreen(m.fs);
   if (m.thumb !== undefined || m.none) lastThumb = m.none ? '' : m.thumb;
+  // The helper reports ~3×/s; the panel only needs to hear about real changes (the play position
+  // is extrapolated there), plus a resync every 2 s.
+  const { pos, cb, ...rest } = m, key = JSON.stringify(rest), now = Date.now();
+  if (key === lastMediaKey && m.thumb === undefined && now - lastMediaAt < 2000) return;
+  lastMediaKey = key; lastMediaAt = now;
   win.webContents.send('media', m);
 }
+let lastMediaKey = '', lastMediaAt = 0;
 // Hide the island while a game or video runs fullscreen.
 let fsHidden = false;
 function onFullscreen(full) {

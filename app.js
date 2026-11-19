@@ -4,6 +4,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const setTxt = (el, t) => { if (el && el.textContent !== t) el.textContent = t; };   // skip identical writes (each one costs a style pass)
 
 /* ---------- icons (1.6px strokes, 24 grid) ---------- */
 const ICON = {
@@ -105,7 +106,13 @@ const SIZES = {
   monitor: [820, 450], start: [760, 536], calc: [660, 404], text: [700, 314], shelf: [700, 256],
   settings: [700, 496], translate: [780, 66 + 300], fx: [600, 66 + 96], phone: [820, 66 + 430], timer: [680, 366], ocr: [620, 302], qr: [740, 66 + 396], launch: [700, 398], color: [700, 250], notifs: [700, 66 + 380],
 };
-function sizeShell(w, h) { if (ui.open) h += 6 + (document.documentElement.dataset.theme === 'dark' ? 12 : 0); const off = ui.open || S.settings.shape === 'capsule' ? 6 : 0; shell.style.width = w + 'px'; shell.style.height = h + 'px'; api.send('rect', { w, h: h + off }); }
+let lastSize = '';
+function sizeShell(w, h) {
+  if (ui.open) h += 6 + (document.documentElement.dataset.theme === 'dark' ? 12 : 0);
+  const off = ui.open || S.settings.shape === 'capsule' ? 6 : 0, k = w + 'x' + h + '+' + off;
+  if (k === lastSize) return;   // media updates arrive ~3×/s; most of them change nothing here
+  lastSize = k; shell.style.width = w + 'px'; shell.style.height = h + 'px'; api.send('rect', { w, h: h + off });
+}
 // What the closed island shows, most important first.
 const OSD = { kind: '', v: 0, muted: false, until: 0, t: 0 };
 const NQ = { queue: [], cur: null, hold: false, t: 0 };
@@ -472,7 +479,7 @@ function paintGauges() {
     const a = $('.gcpu', el), b = $('.gmem', el); if (a) a.textContent = '%' + Math.round(gauge.cpu); if (b) b.textContent = '%' + Math.round(gauge.mem);
   });
 }
-async function pollGauges() { if (!$('.t-mon')) return; const s = await api.invoke('sys:stats', { net: false }); gauge.cpu = s.cpu; gauge.mem = s.mem.used / s.mem.total * 100; paintGauges(); }
+async function pollGauges() { if (!ui.open || !$('.t-mon')) return; const s = await api.invoke('sys:stats', { net: false }); gauge.cpu = s.cpu; gauge.mem = s.mem.used / s.mem.total * 100; paintGauges(); }
 function tWide(el, i, t, sub, to) { el.classList.add('t-row'); el.innerHTML = `${ic(i, 20)}<div class="col"><b>${t}</b><small>${esc(sub)}</small></div>`; el.onclick = () => go(to); }
 
 function vGrid(root) {
@@ -596,9 +603,9 @@ function timerFinish() {
 }
 function timerTick() {
   if (T.running) { T.left = Math.max(0, (T.end - Date.now()) / 1000); if (T.left <= 0) timerFinish(); }
-  const tile = $('.t-timer');
+  const tile = ui.open && $('.t-timer');
   if (tile) {
-    $('.txt', tile).textContent = fmtT(T.left);
+    setTxt($('.txt', tile), fmtT(T.left));
     const fg = $('.fg', tile); if (fg) fg.style.strokeDashoffset = 182.2 * (1 - (T.dur ? T.left / T.dur : 0));
     const bar = $('.tbar i', tile); if (bar) bar.style.width = (T.dur ? T.left / T.dur * 100 : 0) + '%';
     tile.classList.toggle('done', T.done);
@@ -715,8 +722,11 @@ function palette(img) {
 }
 const mGrad = () => { const [r, g, b] = M.rgb; return `linear-gradient(115deg, rgb(${r * .32 | 0},${g * .32 | 0},${b * .32 | 0}) 0%, rgba(${r},${g},${b},.75) 100%)`; };
 function refreshArt() { drawArt($('#miniArt')); $$('canvas.cover').forEach(drawArt); const t = $('.t-media'); if (t) t.dataset.art = '?'; mediaTileTick(); paintGlow(); }
+let drawnArt = null;
 function onMediaChange(changed) {
-  drawArt($('#miniArt')); shell.classList.toggle('paused', !M.playing); paintGlow();
+  const art = M.has ? M.img || 'none' : null;
+  if (art !== drawnArt) { drawnArt = art; drawArt($('#miniArt')); }
+  shell.classList.toggle('paused', !M.playing); paintGlow();
   if (!ui.open) applyClosedSize();
   mediaTileTick();
   if (changed && ui.view === 'media') go('media');
@@ -759,6 +769,7 @@ setInterval(() => {
   if (!M.has) { lastMini = ''; return; }
   const p = mpos(), k = lyricIdx(p); const txt = k >= 0 ? M.lyr[k][1] : M.title + (M.artist ? ' · ' + M.artist : '');
   const box = $('#miniText'), inner = $('#miniInner');
+  if (ui.open || !shell.classList.contains('has-mini')) { if (txt !== lastMini) { lastMini = txt; inner.textContent = txt; inner.style.transform = ''; box.classList.remove('marquee'); } refreshClosed(); return; }
   if (txt !== lastMini) {
     lastMini = txt; box.classList.add('swap');
     setTimeout(() => { inner.style.transition = 'none'; inner.style.transform = ''; inner.textContent = txt; box.classList.remove('swap'); box.classList.remove('marquee'); void inner.offsetWidth; inner.style.transition = ''; }, 160);
@@ -769,7 +780,7 @@ setInterval(() => {
       const s0 = M.lyr[k][0], e = M.lyr[k + 1] ? M.lyr[k + 1][0] : s0 + 6;
       const prog = clamp(((p - s0) / Math.max(.5, e - s0) - .1) / .75, 0, 1);
       inner.style.transform = `translateX(${-(over + 6) * prog}px)`;
-    } else if (over > 2) { box.style.setProperty('--over', -(over + 6) + 'px'); box.classList.add('marquee'); }
+    } else if (over > 2 && !box.classList.contains('marquee')) { box.style.setProperty('--over', -(over + 6) + 'px'); box.classList.add('marquee'); }   // classList.add rewrites the attribute even when present
   }
   box.classList.toggle('fade-l', !!inner.style.transform && inner.style.transform !== 'translateX(0px)');
   refreshClosed();
@@ -785,12 +796,12 @@ function tMedia(el, sz) {
   el.dataset.art = '';
 }
 function mediaTileTick() {
-  const el = $('.t-media'); if (!el) return;
+  const el = ui.open && $('.t-media'); if (!el) return;   // tiles aren't visible while the island is closed
   el.classList.toggle('nomedia', !M.has); if (!M.has) return;
   const p = mpos();
   if (el.dataset.art !== (M.url || 'none')) { el.dataset.art = M.url || 'none'; drawArt($('canvas', el)); $('.mbg', el).style.backgroundImage = M.url ? `url("${M.url}")` : ''; el.classList.toggle('hasart', !!M.url); }
-  $('.ttl', el).textContent = M.title; $('.art', el).textContent = M.artist;
-  const tm = $('.tm', el); if (tm) tm.textContent = fmt(p) + (M.dur > 0 ? ' / ' + fmt(M.dur) : '');
+  setTxt($('.ttl', el), M.title); setTxt($('.art', el), M.artist);
+  setTxt($('.tm', el), fmt(p) + (M.dur > 0 ? ' / ' + fmt(M.dur) : ''));
   const bar = $('.bar i', el); if (bar) bar.style.width = (M.dur > 0 ? p / M.dur * 100 : 0) + '%';
   const pp = $('.pp', el), want = M.playing ? 'pause' : 'play';
   if (pp.dataset.s !== want) { pp.dataset.s = want; pp.innerHTML = ic(want, 14); }
@@ -800,7 +811,7 @@ let lyrRaf = 0;
 // Blurred cover behind the whole panel ("frosted glass" tinted by the album art).
 function paintGlow() {
   const g = $('#glow'); if (!g) return;
-  if (M.url) g.style.backgroundImage = `url("${M.url}")`;
+  if (M.url && g.dataset.src !== M.url) { g.dataset.src = M.url; g.style.backgroundImage = `url("${M.url}")`; }
   shell.classList.toggle('glow', !!M.url && M.has && (ui.view === 'media' && ui.open || !ui.open && closedMode() === 'mini'));
 }
 function vMedia(root) {
@@ -1614,7 +1625,8 @@ function paintPhone() {
 }
 
 /* ---------- notifications ---------- */
-let ntFocus = null, ntApp = '';
+let ntFocus = null, ntApp = '', ntLit = null;
+const ntExp = new Set();   // expanded cards survive repaints (e.g. when an app icon arrives)
 const ntAsked = new Set();
 const ntUnread = () => (S.notifs || []).filter(n => n.at > (S.notifSeen || 0)).length;
 const ntIcon = (n, s = 34) => { const i = ntIconOf(n); return `<span class="nic" style="width:${s}px;height:${s}px">${i ? `<img src="data:image/png;base64,${i}" alt="">` : esc((n.app.trim()[0] || '?').toLocaleUpperCase('tr-TR'))}</span>`; };
@@ -1631,6 +1643,7 @@ function tNotifs(el, sz) {
   else { el.title = 'Bildirimler' + (n ? ' · ' + n + ' yeni' : ''); el.innerHTML = `<span class="nbell">${ic('bell', 20)}${badge}</span>`; }
 }
 function vNotifs(root) {
+  if (!ntFocus) ntLit = null;   // the highlight is only for the notification that was just clicked
   root.innerHTML = '<div class="ntv"><div class="ntapps"></div><div class="ntlist"></div></div>';
   paintNotifs();
   S.notifSeen = Date.now(); save('notifSeen');
@@ -1657,19 +1670,19 @@ function paintNotifs() {
   for (const n of list) {
     const d = ntDay(n.at); if (d !== day) { day = d; html += `<div class="ntday">${esc(d)}</div>`; }
     const open = n.to ? `<button class="btn sm" data-go="${n.to}">Aç</button>` : n.aid ? `<button class="btn sm" data-aid="${n.id}">Uygulamayı aç</button>` : '';
-    html += `<div class="ntc ${n.at > (S.notifSeen || 0) ? 'new' : ''} ${ntFocus === n.id ? 'focus' : ''}" data-id="${n.id}">${ntIcon(n)}
+    html += `<div class="ntc ${n.at > (S.notifSeen || 0) ? 'new' : ''} ${(ntFocus || ntLit) === n.id ? 'focus' : ''} ${ntExp.has(n.id) || ntFocus === n.id ? 'exp' : ''}" data-id="${n.id}">${ntIcon(n)}
       <div class="ntx"><div class="nth"><span>${esc(n.app)}</span><span class="ntw" data-id="${n.id}">${ntAgo(n.at)}</span></div>
       ${n.title ? `<b>${esc(n.title)}</b>` : ''}${n.body ? `<p>${esc(n.body)}</p>` : ''}</div>
       <div class="nta">${open}<button class="icon" data-copy="${n.id}" title="Kopyala">${ic('copy', 14)}</button><button class="icon" data-rm="${n.id}" title="Kaldır">${ic('x', 12)}</button></div></div>`;
   }
   const L = $('.ntlist', box);
   L.innerHTML = html || `<div class="ntempty">${ic('bell', 28)}<b>Bildirim yok</b><small>${S.settings.notifs === false ? 'Windows bildirimleri kapalı · Ayarlar’dan açabilirsin' : 'Gelen bildirimler burada saklanır'}</small></div>`;
-  $$('.ntc', L).forEach(c => c.onclick = e => { if (!e.target.closest('button')) c.classList.toggle('exp'); });
+  $$('.ntc', L).forEach(c => c.onclick = e => { if (e.target.closest('button')) return; const on = c.classList.toggle('exp'); if (on) ntExp.add(c.dataset.id); else ntExp.delete(c.dataset.id); });
   $$('[data-rm]', L).forEach(b => b.onclick = () => { const c = b.closest('.ntc'); c.classList.add('gone'); setTimeout(() => { S.notifs = S.notifs.filter(n => n.id !== b.dataset.rm); save('notifs'); paintNotifs(); }, 200); });
   $$('[data-copy]', L).forEach(b => b.onclick = () => { const n = S.notifs.find(x => x.id === b.dataset.copy); api.send('clips:write', [n.title, n.body].filter(Boolean).join('\n')); toast('Kopyalandı'); });
   $$('[data-go]', L).forEach(b => b.onclick = () => go(b.dataset.go));
   $$('[data-aid]', L).forEach(b => b.onclick = async () => { const n = S.notifs.find(x => x.id === b.dataset.aid); if (!(await api.invoke('notifs:openApp', n.aid))) toast(n.app + ' açılamadı'); });
-  if (ntFocus) { const f = $(`.ntc[data-id="${ntFocus}"]`, L); if (f) { f.classList.add('exp'); requestAnimationFrame(() => { L.scrollTop += f.getBoundingClientRect().top - L.getBoundingClientRect().top - (L.clientHeight - f.offsetHeight) / 2; }); } ntFocus = null; }   // (scrollIntoView would also shift the panel itself)
+  if (ntFocus) { ntExp.add(ntFocus); ntLit = ntFocus; const f = $(`.ntc[data-id="${ntFocus}"]`, L); if (f) { requestAnimationFrame(() => { L.scrollTop += f.getBoundingClientRect().top - L.getBoundingClientRect().top - (L.clientHeight - f.offsetHeight) / 2; }); } ntFocus = null; }   // (scrollIntoView would also shift the panel itself)
 }
 
 /* ---------- text tools ---------- */
@@ -1768,6 +1781,7 @@ function vSettings(root) {
   if (!st.settings || !st.settings.accentMode) S.settings.accentMode = 'windows';
   S.notes = S.notes && S.notes.length ? S.notes : [{ id: 1, text: '' }];
   S.calcHist = S.calcHist || [];
+  if (S.appIconsV !== 2) { S.appIcons = {}; S.appIconsV = 2; save('appIcons'); save('appIconsV'); }   // icons saved before 1.1.1 could be upside down
   clips = st.clips || [];
   Object.assign(T, S.settings.timer || {}); T.left = T.dur;
   winAccent = await api.invoke('accent:get');
