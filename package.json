@@ -1,9 +1,9 @@
 {
-  "name": "klon-notch",
-  "productName": "Klon Notch",
-  "version": "1.0.0",
-  "description": "A floating glass notch for Windows with a grid of tools",
-  "author": "Klon Notch",
+  "name": "adacik",
+  "productName": "Adacık",
+  "version": "1.1.0",
+  "description": "Windows için yüzen, Dynamic Island tarzı akıllı çentik",
+  "author": "MFurkanOzcelik",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -17,9 +17,14 @@
   "dependencies": {
     "qrcode-generator": "^1.4.4"
   },
+  "homepage": "https://github.com/MFurkanOzcelik/adacik",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MFurkanOzcelik/adacik.git"
+  },
   "build": {
-    "appId": "com.klonnotch.app",
-    "productName": "Klon Notch",
+    "appId": "com.adacik.app",
+    "productName": "Adacık",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -31,15 +36,14 @@
       "*.ps1",
       "vendor/**",
       "build/icon.png",
-      "package.json",
-      "!dist/**"
+      "package.json"
     ],
     "asarUnpack": [
       "*.ps1"
     ],
     "win": {
       "icon": "build/icon.png",
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+      "artifactName": "Adacik-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -47,7 +51,7 @@
       "perMachine": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Klon Notch",
+      "shortcutName": "Adacık",
       "runAfterFinish": true,
       "installerLanguages": [
         "tr_TR"
@@ -55,7 +59,8 @@
       "language": "1055"
     },
     "portable": {
-      "artifactName": "${productName}-${version}-portable.${ext}"
-    }
+      "artifactName": "Adacik-${version}-portable.${ext}"
+    },
+    "executableName": "Adacik"
   }
 }

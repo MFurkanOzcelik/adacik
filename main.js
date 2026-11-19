@@ -1,7 +1,7 @@
 const { app, BrowserWindow, screen, globalShortcut, ipcMain, clipboard, powerSaveBlocker, shell, desktopCapturer, systemPreferences, dialog, nativeImage, ClipboardItem } = require('electron');
 // PowerShell can't read files inside app.asar, so the .ps1 helpers ship unpacked next to it
 const RES = __dirname.replace(/app\.asar$/, 'app.asar.unpacked');
-// keep settings, notes and clipboard in the same folder for the installed app and `npm start`
+// keep settings, notes and clipboard in the same folder for the installed app and `npm start` (the folder kept its first name)
 app.setPath('userData', require('path').join(app.getPath('appData'), 'klon-notch'));
 const os = require('os');
 const fs = require('fs');
@@ -282,6 +282,24 @@ setInterval(() => {   // notice wallpaper changes (incl. slideshows) within ~20 
 // ---------- phone link ----------
 let phone = null;
 const phoneEmit = (ch, d) => { if (win && !win.isDestroyed()) win.webContents.send(ch, JSON.parse(JSON.stringify(d === undefined ? null : d))); };
+// open the app a Windows notification came from (only apps Windows lists in its Apps folder)
+const appIds = new Map(), appIcons = new Map();
+// real app icon (Store and desktop apps) for a notification, by its AppUserModelId
+ipcMain.handle('notifs:icon', (_, aid) => {
+  if (!aid || !/^[\w.!\-{}\\ ]+$/.test(aid)) return '';
+  if (!appIcons.has(aid)) appIcons.set(aid, new Promise(res => execFile('powershell', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', path.join(RES, 'appicon.ps1'), '-Aid', aid, '-Size', '64'],
+    { windowsHide: true, timeout: 20000, maxBuffer: 4e6 }, (e, out) => { const b = !e && String(out).trim(); res(b && /^[A-Za-z0-9+/=]+$/.test(b) ? b : ''); })));
+  return appIcons.get(aid);
+});
+ipcMain.handle('notifs:openApp', async (_, aid) => {
+  if (!aid || !/^[\w.!\-{}\\ ]+$/.test(aid)) return false;
+  if (!appIds.has(aid)) appIds.set(aid, await new Promise(res => execFile('powershell', ['-NoProfile', '-NonInteractive', '-Command',   // aid has no quotes (checked above)
+    `[bool]((New-Object -ComObject Shell.Application).NameSpace('shell:AppsFolder').Items() | Where-Object { $_.Path -eq '${aid}' } | Select-Object -First 1)`],
+    { windowsHide: true, timeout: 15000 }, (e, out) => res(!e && /True/.test(out)))));
+  if (!appIds.get(aid)) return false;
+  if (!process.env.KLON_TEST) spawn('explorer.exe', ['shell:AppsFolder\\' + aid], { detached: true, stdio: 'ignore' }).unref();
+  return true;
+});
 ipcMain.handle('phone:state', () => phone ? phone.state() : null);
 ipcMain.handle('phone:start', async () => { try { return await phone.start(); } catch (e) { return { error: e.message }; } });
 ipcMain.on('phone:stop', () => phone && phone.stop());
@@ -297,7 +315,7 @@ ipcMain.on('phone:remove', (_, id) => phone && phone.remove(id));
 ipcMain.on('phone:clear', (_, dev) => phone && phone.clear(dev));
 ipcMain.on('phone:open', (_, id) => { const f = phone && phone.pathOf(id); if (f && !process.env.KLON_TEST) shell.openPath(f); });
 ipcMain.on('phone:reveal', (_, id) => { const f = phone && phone.pathOf(id); if (f && !process.env.KLON_TEST) shell.showItemInFolder(f); });
-ipcMain.on('phone:dir', () => { const dd = path.join(app.getPath('downloads'), 'Klon Notch'); fs.mkdirSync(dd, { recursive: true }); if (!process.env.KLON_TEST) shell.openPath(dd); });
+ipcMain.on('phone:dir', () => { const dd = path.join(app.getPath('downloads'), 'Adacık'); fs.mkdirSync(dd, { recursive: true }); if (!process.env.KLON_TEST) shell.openPath(dd); });
 
 // ---------- calendar sync ----------
 let calState = (store && store.calCache) || { events: [], status: {}, last: 0 }, calBusy = null;
@@ -335,7 +353,7 @@ ipcMain.handle('fx:rates', (_, force) => {
 // Google Translate's public web endpoint (auto-detects the language); MyMemory's free API as a fallback.
 async function getJson(url, ms = 10000) {
   const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
-  try { const r = await fetch(url, { signal: ac.signal, headers: { 'User-Agent': 'Mozilla/5.0 KlonNotch' } }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); }
+  try { const r = await fetch(url, { signal: ac.signal, headers: { 'User-Agent': 'Mozilla/5.0 Adacik' } }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); }
   finally { clearTimeout(t); }
 }
 ipcMain.handle('translate', async (_, { text, from, to }) => {
@@ -451,7 +469,7 @@ ipcMain.handle('shot', async (_, opts) => {
           return resolve({ text: text || '' });
         }
         await writeImageToClipboard(img);
-        const dir = path.join(app.getPath('pictures'), 'Klon Notch'); fs.mkdirSync(dir, { recursive: true });
+        const dir = path.join(app.getPath('pictures'), 'Adacık'); fs.mkdirSync(dir, { recursive: true });
         const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19);
         const f = path.join(dir, 'Screenshot ' + stamp + '.png'); fs.writeFileSync(f, img.toPNG());
         resolve({ path: f });
@@ -475,7 +493,7 @@ ipcMain.on('reveal', (_, f) => { try { shell.showItemInFolder(f); } catch {} });
 // QR page: copy a PNG, read clipboard text, save files next to the screenshots.
 ipcMain.handle('clip:png', async (_, u8) => { try { await clipboard.write([new ClipboardItem({ 'image/png': new Blob([Buffer.from(u8)], { type: 'image/png' }) })]); return true; } catch { return false; } });
 ipcMain.handle('clip:text', async () => { try { return await clipboard.readText(); } catch { return ''; } });
-const saveDir = () => { const dir = path.join(app.getPath('pictures'), 'Klon Notch'); fs.mkdirSync(dir, { recursive: true }); return dir; };
+const saveDir = () => { const dir = path.join(app.getPath('pictures'), 'Adacık'); fs.mkdirSync(dir, { recursive: true }); return dir; };
 ipcMain.handle('save:file', (_, { ext, data, base }) => {
   const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19);
   const f = path.join(saveDir(), `${base || 'Dosya'} ${stamp}.${ext}`);
@@ -561,7 +579,7 @@ function parseLrc(text) {
 async function lrclib(path, params) {
   const u = new URL('https://lrclib.net/api/' + path); for (const [k, v] of Object.entries(params)) if (v !== '' && v != null) u.searchParams.set(k, v);
   const ac = new AbortController(), t = setTimeout(() => ac.abort(), 9000);
-  try { const r = await fetch(u, { signal: ac.signal, headers: { 'User-Agent': 'KlonNotch/0.2 (desktop lyrics)' } }); return r.ok ? await r.json() : null; } catch { return null; } finally { clearTimeout(t); }
+  try { const r = await fetch(u, { signal: ac.signal, headers: { 'User-Agent': 'Adacik/1.1 (desktop lyrics)' } }); return r.ok ? await r.json() : null; } catch { return null; } finally { clearTimeout(t); }
 }
 async function findLyrics(title, artist, dur) {
   const ct = cleanTitle(title), arts = splitArtists(artist), main = arts[0] || artist;

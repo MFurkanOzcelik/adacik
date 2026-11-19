@@ -1,4 +1,4 @@
-/* Klon Notch — quiet grey glass, Windows accent, Segoe UI Variable */
+/* Adacık — quiet grey glass, Windows accent, Segoe UI Variable */
 :root, [data-theme="dark"] {
   --accent: #f08a24;
   --on-accent: #1b1206;
@@ -607,6 +607,18 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #notif { gap: 11px; padding: 0 14px 0 12px; }
 #notifIcon { width: 36px; height: 36px; flex: none; border-radius: 10px; display: grid; place-items: center; overflow: hidden; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 16px; }
 #notifIcon img { width: 100%; height: 100%; object-fit: cover; }
+#notifIcon.img { background: none; border-radius: 0; }
+#notifIcon.img img { object-fit: contain; }
+/* animated outline in the colour of the app that sent the notification */
+@property --na { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+#nring { position: absolute; inset: 0; z-index: 2; border-radius: inherit; padding: 1.5px; pointer-events: none; opacity: 0;
+  background: conic-gradient(from var(--na), transparent 0deg, var(--nc, var(--accent)) 50deg, transparent 130deg, transparent 180deg, var(--nc, var(--accent)) 230deg, transparent 310deg),
+              linear-gradient(color-mix(in srgb, var(--nc, var(--accent)) 30%, transparent), color-mix(in srgb, var(--nc, var(--accent)) 30%, transparent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  transition: opacity .35s; }
+#nring::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 14px -2px var(--nc, var(--accent)); opacity: .45; }
+#shell.closed.mode-notif #nring { opacity: 1; transition-delay: .15s; animation: nspin 2.6s linear infinite; }
+@keyframes nspin { to { --na: 360deg; } }
 #notif .nt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
 #notif .nh { display: flex; gap: 8px; font-size: 11px; color: var(--sub); }
 #notif .nnow { margin-left: auto; color: var(--dim); }
@@ -878,3 +890,44 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .pchip.sel { background: var(--key); color: var(--txt); box-shadow: inset 0 0 0 1px var(--faint); }
 .pchip i { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); flex: none; }
 .pchip i.on { background: #34c759; }
+
+/* ---------- notifications page ---------- */
+.ntv { height: 100%; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.ntapps { display: flex; gap: 6px; overflow-x: auto; flex: none; padding-bottom: 2px; scrollbar-width: none; }
+.ntapps::-webkit-scrollbar { display: none; }
+.ntchip { display: flex; align-items: center; gap: 6px; flex: none; height: 28px; padding: 0 10px 0 8px; border: 0; border-radius: 14px; background: var(--tile); color: var(--sub); font: inherit; font-size: 12px; cursor: pointer; transition: background .2s, color .2s, transform .15s var(--spring); }
+.ntchip:first-child { padding-left: 12px; }
+.ntchip:hover { background: var(--key); color: var(--txt); }
+.ntchip:active { transform: scale(.96); }
+.ntchip.sel { background: var(--key); color: var(--txt); box-shadow: inset 0 0 0 1px var(--faint); }
+.ntchip i { font-style: normal; color: var(--dim); font-size: 11px; font-variant-numeric: tabular-nums; }
+.ntchip .nic { border-radius: 5px; font-size: 9px; }
+.ntlist { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 2px; scroll-behavior: smooth; }
+.ntday { color: var(--dim); font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin: 6px 4px 0; }
+.ntday:first-child { margin-top: 0; }
+.ntc { position: relative; display: flex; gap: 12px; align-items: flex-start; padding: 11px 12px; border-radius: 16px; background: var(--tile); cursor: pointer; transition: background .2s, opacity .2s, transform .2s var(--ease); animation: ntin .35s var(--ease) both; }
+@keyframes ntin { from { opacity: 0; transform: translateY(-4px); } }
+.ntc:hover { background: var(--key); }
+.ntc.new::before { content: ''; position: absolute; left: 4px; top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: 50%; background: var(--accent); }
+.ntc.focus { box-shadow: inset 0 0 0 1px var(--accent); }
+.ntc.gone { opacity: 0; transform: translateX(16px); }
+.nic { flex: none; border-radius: 10px; display: grid; place-items: center; overflow: hidden; background: var(--accent); color: var(--on-accent, #fff); font-weight: 700; font-size: 14px; }
+.nic img { width: 100%; height: 100%; object-fit: cover; }
+.nic:has(img) { background: none; border-radius: 0; }
+.nic:has(img) img { object-fit: contain; }
+.ntx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; line-height: 1.35; }
+.nth { display: flex; gap: 8px; font-size: 11.5px; color: var(--sub); }
+.nth .ntw { margin-left: auto; color: var(--dim); font-variant-numeric: tabular-nums; }
+.ntx b { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ntx p { color: var(--sub); font-size: 12.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+.ntc.exp .ntx b { white-space: normal; }
+.ntc.exp .ntx p { -webkit-line-clamp: unset; white-space: pre-wrap; user-select: text; cursor: text; }
+.nta { display: flex; align-items: center; gap: 2px; align-self: center; opacity: 0; transition: opacity .15s; }
+.ntc:hover .nta, .ntc.exp .nta { opacity: 1; }
+.nta .btn.sm { margin-right: 4px; }
+.ntempty { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--dim); text-align: center; }
+.ntempty b { color: var(--sub); font-weight: 600; }
+.ntempty small { font-size: 12px; }
+#ntclear.sure { color: #ff5f57; }
+.nbell { position: relative; display: grid; place-items: center; }
+.nbadge { position: absolute; top: -7px; right: -10px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: var(--on-accent, #fff); font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; font-variant-numeric: tabular-nums; animation: nin .4s var(--spring) both; }

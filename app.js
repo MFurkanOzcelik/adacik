@@ -75,7 +75,7 @@ const ic = (n, s = 20, extra = '') => `<svg viewBox="0 0 24 24" width="${s}" hei
 const shell = $('#shell'), view = $('#view'), bar = $('#bar'), stage = $('#stage');
 let S = {
   settings: { hoverOpen: true, theme: 'auto', accentMode: 'windows', accent: '#f08a24', position: 'center', onTop: true, alwaysShow: true, shape: 'notch', order: null, awake: false },
-  notes: [{ id: 1, text: '' }], events: {}, colors: [], shelf: [], calcHist: [], launch: null,
+  notes: [{ id: 1, text: '' }], events: {}, colors: [], shelf: [], calcHist: [], launch: null, notifs: [], notifIcons: {}, appIcons: {}, notifSeen: 0,
 };
 let clips = [], winAccent = '#f08a24', wallAccent = null;
 const ui = { open: false, pinned: false, view: 'grid', page: 0, edit: false };
@@ -103,7 +103,7 @@ api.on('accent:wall', c => { wallAccent = c; applyTheme(); });
 const SIZES = {
   grid: [700, 262], media: [600, 360], clipboard: [700, 166], notes: [700, 326], calendar: [740, 352],
   monitor: [820, 450], start: [760, 536], calc: [660, 404], text: [700, 314], shelf: [700, 256],
-  settings: [700, 496], translate: [780, 66 + 300], fx: [600, 66 + 96], phone: [820, 66 + 430], timer: [680, 366], ocr: [620, 302], qr: [740, 66 + 396], launch: [700, 398], color: [700, 250],
+  settings: [700, 496], translate: [780, 66 + 300], fx: [600, 66 + 96], phone: [820, 66 + 430], timer: [680, 366], ocr: [620, 302], qr: [740, 66 + 396], launch: [700, 398], color: [700, 250], notifs: [700, 66 + 380],
 };
 function sizeShell(w, h) { if (ui.open) h += 6 + (document.documentElement.dataset.theme === 'dark' ? 12 : 0); const off = ui.open || S.settings.shape === 'capsule' ? 6 : 0; shell.style.width = w + 'px'; shell.style.height = h + 'px'; api.send('rect', { w, h: h + off }); }
 // What the closed island shows, most important first.
@@ -149,20 +149,73 @@ function showOsd(kind, v, muted) {
   clearTimeout(OSD.t); OSD.t = setTimeout(refreshClosed, 1650);
 }
 // ---- notification island ----
-api.on('notif', n => {
-  if (S.settings.notifs === false) return;
-  if (ui.open) { toast((n.app ? n.app + ': ' : '') + (n.title || n.body || 'Yeni bildirim')); return; }
+api.on('notif', n => { if (S.settings.notifs !== false) notify(n); });
+// Every notification (Windows, phone, calendar) goes through here: kept in the history, then shown.
+function notify(n) {
+  const e = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: Date.now(), app: n.app || 'Bildirim', title: n.title || '', body: n.body || '', aid: n.aid || '', to: n.to || '' };
+  if (n.icon) S.notifIcons[e.app] = n.icon;
+  S.notifs = [e, ...(S.notifs || [])].slice(0, 150); save('notifs'); save('notifIcons');
+  n = { ...n, nid: e.id };
+  if (e.aid && !S.appIcons[e.aid]) api.invoke('notifs:icon', e.aid).then(b => {
+    if (!b) return; S.appIcons[e.aid] = b; save('appIcons');
+    if (NQ.cur && NQ.cur.aid === e.aid) paintNotifIcon(NQ.cur);
+    if (ui.open && ui.view === 'notifs') paintNotifs();
+  });
+  if (ui.open) {
+    if (ui.view === 'notifs') { S.notifSeen = Date.now(); save('notifSeen'); paintNotifs(); }
+    else toast(e.app + ': ' + (e.title || e.body || 'Yeni bildirim'));
+    $$('.t-nt').forEach(el => TILES.notifs.live(el, el.dataset.sz));
+    return;
+  }
   NQ.queue.push(n); if (NQ.queue.length > 5) NQ.queue.shift(); nextNotif();
-});
+}
 function nextNotif() {
   if (NQ.cur || !NQ.queue.length) return;
   const n = NQ.cur = NQ.queue.shift();
-  const letter = esc(((n.app || '?').trim()[0] || '?').toLocaleUpperCase('tr-TR'));
-  $('#notifIcon').innerHTML = n.icon ? `<img src="data:image/png;base64,${n.icon}" alt="">` : letter;
+  paintNotifIcon(n);
   $('#notifApp').textContent = n.app || 'Bildirim';
   $('#notifTitle').textContent = n.title || ''; $('#notifBody').textContent = n.body || '';
   lastMode = 'notif'; applyClosedSize();
   clearTimeout(NQ.t); NQ.t = setTimeout(endNotif, 5500);
+}
+// The app's icon, and its main colour for the animated outline around the island.
+const ntIconOf = n => (n.aid && S.appIcons[n.aid]) || n.icon || S.notifIcons[n.app] || '';
+function paintNotifIcon(n) {
+  const b = ntIconOf(n), el = $('#notifIcon');
+  el.classList.toggle('img', !!b);
+  el.innerHTML = b ? `<img src="data:image/png;base64,${b}" alt="">` : esc(((n.app || '?').trim()[0] || '?').toLocaleUpperCase('tr-TR'));
+  iconColor(b).then(c => { if (NQ.cur === n) shell.style.setProperty('--nc', c || cssVar('--accent')); });
+}
+const colorCache = new Map();
+function iconColor(b64) {
+  if (!b64) return Promise.resolve('');
+  if (colorCache.has(b64)) return Promise.resolve(colorCache.get(b64));
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d', { willReadFrequently: true });
+      x.drawImage(im, 0, 0, 32, 32); const d = x.getImageData(0, 0, 32, 32).data;
+      // weight pixels by how colourful they are, bucket by hue, take the strongest bucket
+      const bins = Array.from({ length: 24 }, () => ({ w: 0, r: 0, g: 0, b: 0 }));
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i + 3] < 140) continue;
+        const r = d[i] / 255, g = d[i + 1] / 255, bl = d[i + 2] / 255, mx = Math.max(r, g, bl), mn = Math.min(r, g, bl), s = mx ? (mx - mn) / mx : 0;
+        if (s < .25 || mx < .2) continue;
+        let h = mx === mn ? 0 : mx === r ? ((g - bl) / (mx - mn) + 6) % 6 : mx === g ? (bl - r) / (mx - mn) + 2 : (r - g) / (mx - mn) + 4;
+        const k = bins[Math.floor(h / 6 * 24) % 24], w = s * s * mx; k.w += w; k.r += d[i] * w; k.g += d[i + 1] * w; k.b += d[i + 2] * w;
+      }
+      const best = bins.reduce((a, k) => k.w > a.w ? k : a, { w: 0 });
+      let col = '';
+      if (best.w > 2) {
+        let [r, g, bl] = [best.r / best.w, best.g / best.w, best.b / best.w];
+        const mx = Math.max(r, g, bl); if (mx < 170) { const f = 170 / mx; r *= f; g *= f; bl *= f; }   // keep it bright enough to glow
+        col = `rgb(${Math.round(Math.min(255, r))}, ${Math.round(Math.min(255, g))}, ${Math.round(Math.min(255, bl))})`;
+      }
+      colorCache.set(b64, col); res(col);
+    };
+    im.onerror = () => res('');
+    im.src = 'data:image/png;base64,' + b64;
+  });
 }
 function endNotif() { if (NQ.hold) return; clearTimeout(NQ.t); NQ.cur = null; refreshClosed(); setTimeout(nextNotif, 450); }
 api.on('fullscreen', v => { if (v && ui.open && !ui.pinned) setOpen(false); });
@@ -223,7 +276,7 @@ api.on('hover', onHover);
 shell.addEventListener('click', e => {
   if (ui.open || e.target.closest('#pinBtn')) return;
   const m = closedMode();
-  if (m === 'notif') { NQ.hold = false; endNotif(); return; }   // click dismisses a notification
+  if (m === 'notif') { ntFocus = NQ.cur && NQ.cur.nid; NQ.hold = false; endNotif(); ui.view = 'notifs'; }   // click opens it in the notifications page
   if (m === 'timer') ui.view = 'timer';                          // click on the countdown opens the timer page
   setOpen(true);
 });
@@ -267,8 +320,8 @@ function addShelfFiles(files) {
 let viewTimers = [];
 function stopViewTimers() { viewTimers.forEach(clearInterval); viewTimers = []; cancelAnimationFrame(lyrRaf); lyrRaf = 0; }
 function every(fn, ms) { const t = setInterval(fn, ms); viewTimers.push(t); return t; }
-const TITLES = { media: 'Medya', clipboard: 'Pano', notes: 'Notlar', calendar: 'Takvim', monitor: 'Sistem izleyici', start: 'Başlat', calc: 'Hesap makinesi', text: 'Metin araçları', shelf: 'Dosya rafı', settings: 'Ayarlar', launch: 'Hızlı başlat', color: 'Renk seçici', qr: 'QR kod', timer: 'Zamanlayıcı', ocr: 'Metin yakala', calsrc: 'Bağlı takvimler', translate: 'Çeviri', fx: 'Döviz çevirici', phone: 'Telefon bağlantısı' };
-const VIEWS = { grid: vGrid, media: vMedia, clipboard: vClip, notes: vNotes, calendar: vCal, monitor: vMon, start: vStart, calc: vCalc, text: vText, shelf: vShelf, settings: vSettings, launch: vLaunch, color: vColor, qr: vQr, timer: vTimer, ocr: vOcr, calsrc: vCalSrc, translate: vTranslate, fx: vFx, phone: vPhone };
+const TITLES = { media: 'Medya', clipboard: 'Pano', notes: 'Notlar', calendar: 'Takvim', monitor: 'Sistem izleyici', start: 'Başlat', calc: 'Hesap makinesi', text: 'Metin araçları', shelf: 'Dosya rafı', settings: 'Ayarlar', launch: 'Hızlı başlat', color: 'Renk seçici', qr: 'QR kod', timer: 'Zamanlayıcı', ocr: 'Metin yakala', calsrc: 'Bağlı takvimler', translate: 'Çeviri', fx: 'Döviz çevirici', phone: 'Telefon bağlantısı', notifs: 'Bildirimler' };
+const VIEWS = { grid: vGrid, media: vMedia, clipboard: vClip, notes: vNotes, calendar: vCal, monitor: vMon, start: vStart, calc: vCalc, text: vText, shelf: vShelf, settings: vSettings, launch: vLaunch, color: vColor, qr: vQr, timer: vTimer, ocr: vOcr, calsrc: vCalSrc, translate: vTranslate, fx: vFx, phone: vPhone, notifs: vNotifs };
 
 function go(name, first) {
   const run = () => {
@@ -292,7 +345,7 @@ function go(name, first) {
 $('#back').onclick = () => go('grid');
 
 /* ---------- tiles ---------- */
-const DEFAULT_ORDER = ['timer', 'media', 'clipboard', 'text', 'launch', 'shot', 'shelf', 'coffee', 'notes', 'pick', 'calc', 'monitor', 'settings', 'calendar', 'start', 'qr', 'ocr', 'translate', 'fx', 'phonelink'];
+const DEFAULT_ORDER = ['timer', 'media', 'clipboard', 'text', 'launch', 'shot', 'shelf', 'coffee', 'notes', 'pick', 'calc', 'monitor', 'settings', 'calendar', 'start', 'qr', 'ocr', 'translate', 'fx', 'phonelink', 'notifs'];
 const TILES = {
   timer: { s: 'big', name: 'Zamanlayıcı', icon: 'timer', draw: tTimer },
   media: { s: 'big', name: 'Medya', icon: 'music', draw: tMedia },
@@ -314,6 +367,7 @@ const TILES = {
   translate: { s: 'small', name: 'Çeviri', icon: 'languages', act: () => go('translate') },
   fx: { s: 'small', name: 'Döviz', icon: 'coins', act: () => go('fx') },
   phonelink: { s: 'small', name: 'Telefon', icon: 'phone', act: () => go('phone') },
+  notifs: { s: 'small', name: 'Bildirimler', icon: 'bell', act: () => go('notifs'), live: tNotifs },
 };
 const COLS = 8, ROWS = 3, SPAN = { big: [2, 2], wide: [2, 1], small: [1, 1] };
 // Sizes each tile can take; the first one is its default.
@@ -944,13 +998,13 @@ setInterval(() => {
   for (const e of CAL.events) if (!e.allDay && e.start > now && e.start <= lim) items.push({ id: e.id, start: e.start, title: e.title, loc: e.loc, src: srcName(e.src) });
   for (const [k, list] of Object.entries(S.events)) for (const e of list) {
     if (!/^\d\d:\d\d$/.test(e.t)) continue; const t = new Date(k + 'T' + e.t + ':00').getTime();
-    if (t > now && t <= lim) items.push({ id: 'local' + e.id, start: t, title: e.text, loc: '', src: 'Klon Notch' });
+    if (t > now && t <= lim) items.push({ id: 'local' + e.id, start: t, title: e.text, loc: '', src: 'Adacık' });
   }
   for (const it of items) {
     if (reminded.has(it.id + '@' + it.start)) continue; reminded.add(it.id + '@' + it.start);
     const mins = Math.max(1, Math.round((it.start - now) / 6e4)), body = hm(it.start) + ' · ' + mins + ' dk sonra' + (it.loc ? ' · ' + it.loc : '');
     if (ui.open) toast(it.title + ' · ' + mins + ' dk sonra');
-    else { NQ.queue.push({ app: 'Takvim · ' + it.src, title: it.title, body, icon: '' }); nextNotif(); }
+    else notify({ app: 'Takvim · ' + it.src, title: it.title, body, icon: '', to: 'calendar' });
   }
 }, 20000);
 
@@ -975,7 +1029,7 @@ function vCal(root) {
       }
     }
     const sk = key(calSel);
-    const evs = [...(S.events[sk] || []).map(e => ({ local: true, id: e.id, sort: e.t === 'Tüm gün' ? '' : e.t, time: e.t, title: e.text, color: 'var(--accent)', from: 'Klon Notch' })),
+    const evs = [...(S.events[sk] || []).map(e => ({ local: true, id: e.id, sort: e.t === 'Tüm gün' ? '' : e.t, time: e.t, title: e.text, color: 'var(--accent)', from: 'Adacık' })),
       ...syncedOn(sk).map(e => ({ sort: e.allDay ? '' : hm(e.start), time: e.allDay ? 'Tüm gün' : hm(e.start) + '–' + hm(e.end), title: e.title, loc: e.loc, color: srcColor(e.src), from: srcName(e.src) }))]
       .sort((a, b) => a.sort.localeCompare(b.sort));
     const dayEnd = new Date(sk + 'T00:00').getTime() + 864e5, up = [];
@@ -1324,8 +1378,8 @@ function vQr(root) {
     fr.readAsDataURL(file); e.target.value = '';
   };
   $('#qcopy', root).onclick = async () => { if (!svg) return; try { const ok = await api.invoke('clip:png', await qrPng(svg)); toast(ok ? 'QR kod panoya kopyalandı' : 'Kopyalanamadı'); } catch { toast('Kopyalanamadı'); } };
-  $('#qpng', root).onclick = async () => { if (!svg) return; const f = await api.invoke('save:file', { ext: 'png', data: await qrPng(svg), base: 'QR' }); toast('PNG kaydedildi: Resimler\\Klon Notch'); QR.last = f; };
-  $('#qsvg', root).onclick = async () => { if (!svg) return; const f = await api.invoke('save:file', { ext: 'svg', data: '<?xml version="1.0" encoding="UTF-8"?>\n' + svg, base: 'QR' }); toast('SVG kaydedildi: Resimler\\Klon Notch'); QR.last = f; };
+  $('#qpng', root).onclick = async () => { if (!svg) return; const f = await api.invoke('save:file', { ext: 'png', data: await qrPng(svg), base: 'QR' }); toast('PNG kaydedildi: Resimler\\Adacık'); QR.last = f; };
+  $('#qsvg', root).onclick = async () => { if (!svg) return; const f = await api.invoke('save:file', { ext: 'svg', data: '<?xml version="1.0" encoding="UTF-8"?>\n' + svg, base: 'QR' }); toast('SVG kaydedildi: Resimler\\Adacık'); QR.last = f; };
   paintLogoBtn(); render(); setTimeout(() => txt.focus(), 300);
 }
 
@@ -1489,8 +1543,8 @@ api.on('phone:state', st => {
 });
 api.on('phone:incoming', d => {
   const text = d.type === 'file' ? d.name + ' alındı · ' + bytes(d.size) : d.text;
-  if (ui.open) { if (ui.view !== 'phone') toast((d.from || 'Telefon') + ': ' + text.slice(0, 60)); }
-  else { NQ.queue.push({ app: d.from || 'Telefon', title: d.type === 'file' ? 'Dosya alındı' : 'Yeni mesaj', body: text, icon: '' }); nextNotif(); }
+  if (ui.open && ui.view === 'phone') return;
+  notify({ app: d.from || 'Telefon', title: d.type === 'file' ? 'Dosya alındı' : 'Yeni mesaj', body: text, icon: '', to: 'phone' });
 });
 const phAgo = t => { if (!t) return ''; const s = (Date.now() - t) / 1000; return s < 60 ? 'az önce' : s < 3600 ? Math.floor(s / 60) + ' dk önce' : s < 86400 ? Math.floor(s / 3600) + ' sa önce' : new Date(t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }); };
 let phView = '';   // '' = automatic, 'qr' = show the pairing code
@@ -1536,12 +1590,12 @@ function paintPhone() {
   box.innerHTML = `<div class="pcon">
     <div class="pside">${chips}<div class="pdev"><span class="pnotch"></span>${ic(dv.kind === 'iphone' ? 'apple' : 'android', 28)}</div>
       <b class="pname">${esc(dv.name)}</b><div class="pstat ${dv.online ? 'on' : ''}"><i></i><span>${dv.online ? 'Bağlı' : 'Uzakta · ' + phAgo(dv.lastSeen)}</span></div>
-      <p>Telefonda Klon Notch sayfasını aç (ya da ana ekrana eklediğin simgeyi). Kendiliğinden yeniden bağlanır.</p>
+      <p>Telefonda Adacık sayfasını aç (ya da ana ekrana eklediğin simgeyi). Kendiliğinden yeniden bağlanır.</p>
       <div class="pside-btns"><button class="btn" id="pshowqr">${ic('qr', 14)}Telefon ekle</button><button class="btn warn" id="punpair">Bu telefonu kaldır</button></div></div>
-    <div class="pmain"><div class="pdrop" id="pdrop"><span class="pup">${ic('upload', 20)}</span><div class="col"><b>Dosyaları buraya bırak</b><small>${esc(dv.name)} üzerindeki Klon Notch sayfasından indirilebilir</small></div>
+    <div class="pmain"><div class="pdrop" id="pdrop"><span class="pup">${ic('upload', 20)}</span><div class="col"><b>Dosyaları buraya bırak</b><small>${esc(dv.name)} üzerindeki Adacık sayfasından indirilebilir</small></div>
         <button class="btn" id="ppick">${ic('doc', 14)}Dosya seç</button><button class="btn" id="pclip">${ic('clip', 14)}Panoyu gönder</button></div>
       <div class="pmsgrow"><input class="field" id="pmsg" placeholder="${esc(dv.name)} cihazına mesaj veya bağlantı yaz"><button class="btn pri" id="psend">${ic('send', 14)}Gönder</button></div>
-      <div class="plist">${items || '<div class="pempty">Dosyalar ve mesajlar burada görünür. Telefondan gelen dosyalar İndirilenler\\Klon Notch klasörüne kaydedilir.</div>'}</div></div></div>`;
+      <div class="plist">${items || '<div class="pempty">Dosyalar ve mesajlar burada görünür. Telefondan gelen dosyalar İndirilenler\\Adacık klasörüne kaydedilir.</div>'}</div></div></div>`;
   $$('[data-dev]', box).forEach(b => b.onclick = () => { phSel = b.dataset.dev; paintPhone(); });
   const send = async () => { const i = $('#pmsg'); if (await api.invoke('phone:sendText', i.value, dv.id)) { i.value = ''; toast(dv.name + ' cihazına gönderildi'); } };
   $('#psend').onclick = send; $('#pmsg').onkeydown = e => { if (e.key === 'Enter') send(); }; $('#pmsg').onfocus = () => api.send('focus', true);
@@ -1557,6 +1611,65 @@ function paintPhone() {
   $$('[data-rev]', box).forEach(b => b.onclick = () => api.send('phone:reveal', b.dataset.rev));
   $$('[data-rm]', box).forEach(b => b.onclick = () => api.send('phone:remove', b.dataset.rm));
   $$('[data-copy]', box).forEach(b => b.onclick = () => { const it = st.items.find(x => x.id === b.dataset.copy); if (it) { api.send('clips:write', it.text); toast('Kopyalandı'); } });
+}
+
+/* ---------- notifications ---------- */
+let ntFocus = null, ntApp = '';
+const ntAsked = new Set();
+const ntUnread = () => (S.notifs || []).filter(n => n.at > (S.notifSeen || 0)).length;
+const ntIcon = (n, s = 34) => { const i = ntIconOf(n); return `<span class="nic" style="width:${s}px;height:${s}px">${i ? `<img src="data:image/png;base64,${i}" alt="">` : esc((n.app.trim()[0] || '?').toLocaleUpperCase('tr-TR'))}</span>`; };
+const ntTime = t => new Date(t).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+function ntDay(t) {
+  const d = new Date(t), today = new Date(); today.setHours(0, 0, 0, 0);
+  const diff = Math.round((today - new Date(d).setHours(0, 0, 0, 0)) / 864e5);
+  return diff === 0 ? 'Bugün' : diff === 1 ? 'Dün' : d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
+}
+function tNotifs(el, sz) {
+  el.classList.add('t-nt'); el.dataset.sz = sz; el.onclick = () => go('notifs');
+  const n = ntUnread(), last = (S.notifs || [])[0], badge = n ? `<span class="nbadge">${n > 99 ? '99+' : n}</span>` : '';
+  if (sz === 'wide') { el.classList.add('t-row'); el.innerHTML = `<span class="nbell">${ic('bell', 20)}${badge}</span><div class="col"><b>Bildirimler</b><small>${last ? esc(last.app + ' · ' + (last.title || last.body)) : 'Bildirim yok'}</small></div>`; }
+  else { el.title = 'Bildirimler' + (n ? ' · ' + n + ' yeni' : ''); el.innerHTML = `<span class="nbell">${ic('bell', 20)}${badge}</span>`; }
+}
+function vNotifs(root) {
+  root.innerHTML = '<div class="ntv"><div class="ntapps"></div><div class="ntlist"></div></div>';
+  paintNotifs();
+  S.notifSeen = Date.now(); save('notifSeen');
+  every(() => $$('.ntlist .ntw').forEach(e => { const n = S.notifs.find(x => x.id === e.dataset.id); if (n) e.textContent = ntAgo(n.at); }), 30000);
+}
+const ntAgo = t => { const s = (Date.now() - t) / 1000; return s < 60 ? 'şimdi' : s < 3600 ? Math.floor(s / 60) + ' dk' : ntTime(t); };
+function paintNotifs() {
+  const box = $('.ntv'); if (!box) return;
+  const all = S.notifs || [];
+  $('#barActions').innerHTML = all.length ? `<button class="icon" id="ntclear" title="Tümünü temizle">${ic('trash', 16)}</button>` : '';
+  const cb = $('#ntclear');
+  if (cb) cb.onclick = () => { if (!cb.dataset.sure) { cb.dataset.sure = 1; cb.classList.add('sure'); cb.title = 'Emin misin? Tekrar tıkla'; toast('Silmek için tekrar tıkla'); return; } S.notifs = ntApp ? all.filter(n => n.app !== ntApp) : []; ntApp = ''; save('notifs'); paintNotifs(); };
+  // apps: who sent what, newest first
+  const apps = []; all.forEach(n => { let a = apps.find(x => x.app === n.app); if (!a) apps.push(a = { app: n.app, c: 0, n }); a.c++; });
+  if (ntApp && !apps.some(a => a.app === ntApp)) ntApp = '';
+  $('.ntapps', box).innerHTML = apps.length > 1 ? `<button class="ntchip ${ntApp ? '' : 'sel'}" data-app="">Tümü<i>${all.length}</i></button>` + apps.map(a => `<button class="ntchip ${ntApp === a.app ? 'sel' : ''}" data-app="${esc(a.app)}">${ntIcon(a.n, 16)}${esc(a.app)}<i>${a.c}</i></button>`).join('') : '';
+  $('.ntapps', box).style.display = apps.length > 1 ? '' : 'none';
+  $$('.ntchip', box).forEach(b => b.onclick = () => { ntApp = b.dataset.app; paintNotifs(); });
+  // older entries whose app icon isn't fetched yet
+  const miss = [...new Set(all.filter(n => n.aid && !S.appIcons[n.aid] && !ntAsked.has(n.aid)).map(n => n.aid))];
+  if (miss.length) { miss.forEach(a => ntAsked.add(a)); Promise.all(miss.map(a => api.invoke('notifs:icon', a).then(b => { if (b) S.appIcons[a] = b; return b; }))).then(r => { if (r.some(Boolean)) { save('appIcons'); paintNotifs(); } }); }
+  const list = all.filter(n => !ntApp || n.app === ntApp);
+  let html = '', day = '';
+  for (const n of list) {
+    const d = ntDay(n.at); if (d !== day) { day = d; html += `<div class="ntday">${esc(d)}</div>`; }
+    const open = n.to ? `<button class="btn sm" data-go="${n.to}">Aç</button>` : n.aid ? `<button class="btn sm" data-aid="${n.id}">Uygulamayı aç</button>` : '';
+    html += `<div class="ntc ${n.at > (S.notifSeen || 0) ? 'new' : ''} ${ntFocus === n.id ? 'focus' : ''}" data-id="${n.id}">${ntIcon(n)}
+      <div class="ntx"><div class="nth"><span>${esc(n.app)}</span><span class="ntw" data-id="${n.id}">${ntAgo(n.at)}</span></div>
+      ${n.title ? `<b>${esc(n.title)}</b>` : ''}${n.body ? `<p>${esc(n.body)}</p>` : ''}</div>
+      <div class="nta">${open}<button class="icon" data-copy="${n.id}" title="Kopyala">${ic('copy', 14)}</button><button class="icon" data-rm="${n.id}" title="Kaldır">${ic('x', 12)}</button></div></div>`;
+  }
+  const L = $('.ntlist', box);
+  L.innerHTML = html || `<div class="ntempty">${ic('bell', 28)}<b>Bildirim yok</b><small>${S.settings.notifs === false ? 'Windows bildirimleri kapalı · Ayarlar’dan açabilirsin' : 'Gelen bildirimler burada saklanır'}</small></div>`;
+  $$('.ntc', L).forEach(c => c.onclick = e => { if (!e.target.closest('button')) c.classList.toggle('exp'); });
+  $$('[data-rm]', L).forEach(b => b.onclick = () => { const c = b.closest('.ntc'); c.classList.add('gone'); setTimeout(() => { S.notifs = S.notifs.filter(n => n.id !== b.dataset.rm); save('notifs'); paintNotifs(); }, 200); });
+  $$('[data-copy]', L).forEach(b => b.onclick = () => { const n = S.notifs.find(x => x.id === b.dataset.copy); api.send('clips:write', [n.title, n.body].filter(Boolean).join('\n')); toast('Kopyalandı'); });
+  $$('[data-go]', L).forEach(b => b.onclick = () => go(b.dataset.go));
+  $$('[data-aid]', L).forEach(b => b.onclick = async () => { const n = S.notifs.find(x => x.id === b.dataset.aid); if (!(await api.invoke('notifs:openApp', n.aid))) toast(n.app + ' açılamadı'); });
+  if (ntFocus) { const f = $(`.ntc[data-id="${ntFocus}"]`, L); if (f) { f.classList.add('exp'); requestAnimationFrame(() => { L.scrollTop += f.getBoundingClientRect().top - L.getBoundingClientRect().top - (L.clientHeight - f.offsetHeight) / 2; }); } ntFocus = null; }   // (scrollIntoView would also shift the panel itself)
 }
 
 /* ---------- text tools ---------- */
@@ -1611,7 +1724,7 @@ function vSettings(root) {
   const st = S.settings;
   const seg = (k, opts, cls = '') => `<div class="seg ${cls}" data-seg="${k}">${opts.map(([v, l]) => `<button data-v="${v}" class="${(st[k] ?? opts[0][0]) === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
   const sw = (k, on) => `<div class="sw ${on ? 'on' : ''}" data-sw="${k}" role="switch"></div>`;
-  api.invoke('version').then(v => { const el = $('#barActions'); if (el && ui.view === 'settings') el.innerHTML = `<span class="ver">Klon Notch ${esc(v)}</span>`; });
+  api.invoke('version').then(v => { const el = $('#barActions'); if (el && ui.view === 'settings') el.innerHTML = `<span class="ver">Adacık ${esc(v)}</span>`; });
   root.innerHTML = `<div class="set2">
     <div class="sbox"><div class="lb">Görünüm</div>
       <div class="sline"><span>Tema</span>${seg('theme', [['auto', 'Otomatik'], ['dark', 'Koyu'], ['light', 'Açık']])}</div>

@@ -134,7 +134,7 @@ async function fetchIcs(url) {
   if (/^[a-z]:\\|^\\\\/i.test(url)) return require('fs').promises.readFile(url, 'utf8');   // a local .ics file
   const ac = new AbortController(), t = setTimeout(() => ac.abort(), 20000);
   try {
-    const r = await fetch(url, { signal: ac.signal, headers: { 'User-Agent': 'KlonNotch-Calendar/1.0', Accept: 'text/calendar, text/plain, */*' } });
+    const r = await fetch(url, { signal: ac.signal, headers: { 'User-Agent': 'Adacik-Calendar/1.0', Accept: 'text/calendar, text/plain, */*' } });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const text = await r.text(); if (!/BEGIN:VCALENDAR/i.test(text)) throw new Error('Bu bağlantı bir takvim (ICS) dosyası döndürmedi');
     return text;

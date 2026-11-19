@@ -1,5 +1,5 @@
 param([int]$OwnPid = 0)
-# Background helper for Klon Notch. Prints one JSON line per poll (~300 ms) with:
+# Background helper for Adacık. Prints one JSON line per poll (~300 ms) with:
 #   media session (title, artist, cover, position), system volume, screen brightness,
 #   clipboard sequence number (so the app only reads the clipboard when it changed),
 #   whether the foreground window is fullscreen, and new Windows notifications.
@@ -107,7 +107,7 @@ function Get-NewNotifications([bool]$prime) {
     $icon = ''; $aid = ''; try { $aid = $n.AppInfo.AppUserModelId } catch {}
     if ($aid -and $iconCache.ContainsKey($aid)) { $icon = $iconCache[$aid] }
     elseif ($aid) { try { $bytes = Read-Thumb ($n.AppInfo.DisplayInfo.GetLogo((New-Object Windows.Foundation.Size 32, 32))); if ($bytes) { $icon = [Convert]::ToBase64String($bytes) } } catch {}; $iconCache[$aid] = $icon }
-    $out += [ordered]@{ id = $n.Id; app = $app; title = ($texts | Select-Object -First 1); body = (($texts | Select-Object -Skip 1) -join ' '); icon = $icon }
+    $out += [ordered]@{ id = $n.Id; app = $app; aid = $aid; title = ($texts | Select-Object -First 1); body = (($texts | Select-Object -Skip 1) -join ' '); icon = $icon }
   }
   return ,$out
 }

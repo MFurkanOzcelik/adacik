@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="400" viewBox="0 0 900 400" font-family="Segoe UI Variable Display, Segoe UI, system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#121214"/><stop offset="1" stop-color="#050505"/></linearGradient>
+    <radialGradient id="glow" cx=".5" cy="1" r=".6"><stop offset="0" stop-color="#f08a24" stop-opacity=".28"/><stop offset="1" stop-color="#f08a24" stop-opacity="0"/></radialGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1b1e"/><stop offset="1" stop-color="#0c0c0d"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#7c6cff" stop-opacity="0"/><stop offset=".45" stop-color="#9d8cff"/><stop offset=".55" stop-color="#7c6cff"/><stop offset="1" stop-color="#7c6cff" stop-opacity="0"/>
+      <animateTransform attributeName="gradientTransform" type="rotate" values="0 .5 .5;360 .5 .5" dur="2.4s" repeatCount="indefinite"/>
+    </linearGradient>
+    <filter id="sh" x="-20%" y="-40%" width="140%" height="200%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity=".7"/></filter>
+    <linearGradient id="cover" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a59"/><stop offset="1" stop-color="#7c3aed"/></linearGradient>
+  </defs>
+
+  <rect width="900" height="400" fill="url(#bg)"/>
+  <rect width="900" height="400" fill="url(#glow)"/>
+  <!-- screen edge -->
+  <rect x="0" y="0" width="900" height="3" fill="#ffffff" opacity=".06"/>
+
+  <!-- 12 s loop: idle → notification → idle → panel → idle -->
+  <g filter="url(#sh)">
+    <rect fill="url(#panel)" y="18">
+      <animate attributeName="x" dur="12s" repeatCount="indefinite" calcMode="spline" keyTimes="0;.15;.21;.4;.46;.5;.57;.8;.87;1" keySplines=".2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1" values="375;375;250;250;375;375;110;110;375;375"/>
+      <animate attributeName="width" dur="12s" repeatCount="indefinite" calcMode="spline" keyTimes="0;.15;.21;.4;.46;.5;.57;.8;.87;1" keySplines=".2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1" values="150;150;400;400;150;150;680;680;150;150"/>
+      <animate attributeName="height" dur="12s" repeatCount="indefinite" calcMode="spline" keyTimes="0;.15;.21;.4;.46;.5;.57;.8;.87;1" keySplines=".2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1" values="34;34;70;70;34;34;236;236;34;34"/>
+      <animate attributeName="rx" dur="12s" repeatCount="indefinite" calcMode="spline" keyTimes="0;.15;.21;.4;.46;.5;.57;.8;.87;1" keySplines=".2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1;.2 .9 .3 1" values="17;17;35;35;17;17;26;26;17;17"/>
+    </rect>
+  </g>
+
+  <!-- coloured ring while a notification is shown -->
+  <rect x="251" y="19" width="398" height="68" rx="34" fill="none" stroke="#7c6cff" stroke-opacity=".3" stroke-width="1.5" opacity="0">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;.2;.23;.38;.41;1" values="0;0;1;1;0;0"/>
+  </rect>
+  <rect x="251" y="19" width="398" height="68" rx="34" fill="none" stroke="url(#ring)" stroke-width="2.2" opacity="0">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;.2;.23;.38;.41;1" values="0;0;1;1;0;0"/>
+  </rect>
+
+  <!-- idle: clock + battery -->
+  <g opacity="1">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;.14;.16;.45;.47;.5;.52;.86;.88;1" values="1;1;0;0;1;1;0;0;1;1"/>
+    <text x="398" y="40" fill="#fff" font-size="14" font-weight="600">14:32</text>
+    <rect x="464" y="29" width="24" height="12" rx="3.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.3"/>
+    <rect x="466.5" y="31.5" width="15" height="7" rx="1.5" fill="#34c759"/>
+    <rect x="489" y="32.5" width="2" height="5" rx="1" fill="#fff" fill-opacity=".55"/>
+    <text x="496" y="40" fill="#fff" fill-opacity=".7" font-size="12">%72</text>
+  </g>
+
+  <!-- notification -->
+  <g opacity="0">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;.21;.24;.38;.4;1" values="0;0;1;1;0;0"/>
+    <rect x="266" y="33" width="40" height="40" rx="11" fill="#7c6cff"/>
+    <path d="M276 46a6 6 0 0 1 6-6h8a6 6 0 0 1 6 6v5a6 6 0 0 1-6 6h-6l-5 4v-4a6 6 0 0 1-3-5z" fill="#fff"/>
+    <text x="318" y="44" fill="#fff" fill-opacity=".6" font-size="11.5">Mesajlar</text>
+    <text x="612" y="44" fill="#fff" fill-opacity=".4" font-size="11.5" text-anchor="end">şimdi</text>
+    <text x="318" y="61" fill="#fff" font-size="14" font-weight="600">Ayşe</text>
+    <text x="318" y="77" fill="#fff" fill-opacity=".62" font-size="12.5">Akşam görüşelim mi?</text>
+  </g>
+
+  <!-- open panel -->
+  <g opacity="0">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;.56;.6;.79;.81;1" values="0;0;1;1;0;0"/>
+    <!-- media tile -->
+    <rect x="130" y="40" width="250" height="194" rx="20" fill="#fff" fill-opacity=".06"/>
+    <rect x="148" y="58" width="64" height="64" rx="14" fill="url(#cover)"/>
+    <text x="226" y="84" fill="#fff" font-size="14" font-weight="600">Gece Yolu</text>
+    <text x="226" y="103" fill="#fff" fill-opacity=".55" font-size="12">Mavi Saat</text>
+    <rect x="148" y="148" width="214" height="4" rx="2" fill="#fff" fill-opacity=".15"/>
+    <rect x="148" y="148" width="90" height="4" rx="2" fill="#fff">
+      <animate attributeName="width" dur="12s" repeatCount="indefinite" keyTimes="0;.56;.8;1" values="90;90;150;150"/>
+    </rect>
+    <g fill="#fff">
+      <path d="M186 178h3v16h-3zM205 178l-13 8 13 8z" fill-opacity=".8"/>
+      <rect x="244" y="174" width="4.5" height="24" rx="1.5"/><rect x="253" y="174" width="4.5" height="24" rx="1.5"/>
+      <path d="M298 178l13 8-13 8zM312 178h3v16h-3z" fill-opacity=".8"/>
+    </g>
+    <!-- lyric line -->
+    <text x="255" y="224" fill="#fff" fill-opacity=".45" font-size="11.5" text-anchor="middle">♪ şehir uyurken ben yoldayım</text>
+    <!-- timer tile -->
+    <rect x="392" y="40" width="250" height="94" rx="20" fill="#fff" fill-opacity=".06"/>
+    <circle cx="436" cy="87" r="22" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="4"/>
+    <circle cx="436" cy="87" r="22" fill="none" stroke="#f08a24" stroke-width="4" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="40" transform="rotate(-90 436 87)">
+      <animate attributeName="stroke-dashoffset" dur="12s" repeatCount="indefinite" keyTimes="0;.56;.8;1" values="40;40;70;70"/>
+    </circle>
+    <text x="472" y="84" fill="#fff" font-size="22" font-weight="600">24:12</text>
+    <text x="472" y="104" fill="#fff" fill-opacity=".5" font-size="12">Odaklanma</text>
+    <!-- small tiles -->
+    <g fill="#fff" fill-opacity=".06">
+      <rect x="392" y="146" width="56" height="88" rx="18"/><rect x="456" y="146" width="56" height="88" rx="18"/>
+      <rect x="520" y="146" width="56" height="40" rx="14"/><rect x="584" y="146" width="58" height="40" rx="14"/>
+      <rect x="520" y="194" width="56" height="40" rx="14"/><rect x="584" y="194" width="58" height="40" rx="14"/>
+      <rect x="654" y="40" width="116" height="94" rx="20"/><rect x="654" y="146" width="116" height="88" rx="20"/>
+    </g>
+    <g fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <!-- clipboard --><rect x="411" y="179" width="18" height="22" rx="3"/><path d="M416 179v-3h8v3"/>
+      <!-- phone --><rect x="477" y="178" width="14" height="24" rx="3"/><path d="M482 198h4"/>
+      <!-- bell --><path d="M541 172a7 7 0 0 1 14 0c0 8 3 10 3 10h-20s3-2 3-10M546 186a2.3 2.3 0 0 0 4 0"/>
+      <!-- qr --><rect x="604" y="157" width="7" height="7"/><rect x="615" y="157" width="7" height="7"/><rect x="604" y="168" width="7" height="7"/><path d="M616 169h6M619 172v3"/>
+      <!-- camera --><rect x="538" y="206" width="20" height="15" rx="3"/><circle cx="548" cy="213.5" r="3.5"/>
+      <!-- translate --><path d="M603 207h10M608 204v3M605 216c3-1 6-4 7-9M606 210c1 3 4 5 7 6M614 222l4-10 4 10M615.5 219h5"/>
+    </g>
+    <!-- monitor ring tile -->
+    <circle cx="690" cy="87" r="20" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="4"/>
+    <circle cx="690" cy="87" r="20" fill="none" stroke="#34c759" stroke-width="4" stroke-linecap="round" stroke-dasharray="125.6" stroke-dashoffset="80" transform="rotate(-90 690 87)">
+      <animate attributeName="stroke-dashoffset" dur="3s" repeatCount="indefinite" values="80;60;88;72;80"/>
+    </circle>
+    <text x="690" y="91" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">%34</text>
+    <text x="722" y="84" fill="#fff" fill-opacity=".55" font-size="10.5">İşlemci</text>
+    <text x="722" y="99" fill="#fff" fill-opacity=".55" font-size="10.5">Bellek</text>
+    <!-- calendar tile -->
+    <text x="712" y="178" fill="#f08a24" font-size="11" font-weight="600" text-anchor="middle">PERŞEMBE</text>
+    <text x="712" y="214" fill="#fff" font-size="32" font-weight="600" text-anchor="middle">19</text>
+  </g>
+
+  <!-- title -->
+  <text x="450" y="322" fill="#fff" font-size="44" font-weight="700" text-anchor="middle" letter-spacing="-1">Adacık</text>
+  <text x="450" y="356" fill="#fff" fill-opacity=".55" font-size="16" text-anchor="middle">Windows için yüzen, akıllı çentik</text>
+</svg>

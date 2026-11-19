@@ -28,7 +28,7 @@ const newKey = () => crypto.randomBytes(18).toString('base64url');
 class Phone {
   constructor({ store, save, emit, downloads, test }) {
     this.store = store; this.save = save; this.emit = emit; this.test = test;
-    this.dir = path.join(downloads, 'Klon Notch');
+    this.dir = path.join(downloads, 'Adacık');
     this.srv = null; this.clients = new Set();   // { res, dev }
     const p = store.phone || {};
     // older versions had one shared device without a key: those phones simply scan the QR code again
@@ -88,7 +88,7 @@ class Phone {
     const { dev, pair, u } = this.who(q), route = u.pathname;
     const json = (code, obj) => { r.writeHead(code, { 'Content-Type': 'application/json' }); r.end(JSON.stringify(obj)); };
     if (route === '/favicon.ico') { r.writeHead(204); return r.end(); }
-    if (route === '/manifest.json') { r.writeHead(200, { 'Content-Type': 'application/manifest+json' }); return r.end(JSON.stringify({ name: 'Klon Notch', short_name: 'Klon Notch', start_url: '/', display: 'standalone', background_color: '#000000', theme_color: '#000000' })); }
+    if (route === '/manifest.json') { r.writeHead(200, { 'Content-Type': 'application/manifest+json' }); return r.end(JSON.stringify({ name: 'Adacık', short_name: 'Adacık', start_url: '/', display: 'standalone', background_color: '#000000', theme_color: '#000000' })); }
     if (route === '/') {
       if (!dev && !pair) { r.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' }); return r.end(PAGE_DENIED); }
       r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); return r.end(PAGE);
@@ -159,13 +159,13 @@ class Phone {
 }
 
 const PAGE_DENIED = `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="background:#000;color:#ddd;font:16px system-ui;display:grid;place-items:center;height:90vh;text-align:center;padding:24px">
-<div><h2 style="margin:0 0 8px">Bağlantı geçersiz</h2><p style="color:#999">Bilgisayarda Klon Notch → Telefon sayfasındaki QR kodunu yeniden okut.</p></div>
+<div><h2 style="margin:0 0 8px">Bağlantı geçersiz</h2><p style="color:#999">Bilgisayarda Adacık → Telefon sayfasındaki QR kodunu yeniden okut.</p></div>
 <script>try{var d=localStorage.getItem('kd');if(d&&location.search.indexOf('d=')<0)location.replace('/?d='+encodeURIComponent(d))}catch(e){}</script></body>`;
 
 const PAGE = `<!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#000000"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="manifest" href="/manifest.json">
-<title>Klon Notch</title>
+<title>Adacık</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#000;color:#f2f2f2;font:15px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;padding:16px 16px calc(24px + env(safe-area-inset-bottom));min-height:100vh}
@@ -195,7 +195,7 @@ textarea:focus{border-color:#f08a24}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#222;color:#fff;padding:10px 16px;border-radius:14px;opacity:0;transition:.3s;font-size:14px}
 .toast.show{opacity:1;transform:translateX(-50%)}
 </style></head><body>
-<header><div class="eyes"><i></i><i></i></div><h1>Klon Notch</h1><div class="st" id="st"><b></b><span>Bağlanıyor…</span></div></header>
+<header><div class="eyes"><i></i><i></i></div><h1>Adacık</h1><div class="st" id="st"><b></b><span>Bağlanıyor…</span></div></header>
 <main id="app">
 <div class="card"><div class="big"><button class="btn" id="pick">⬆ Dosya gönder</button></div>
   <input type="file" id="file" multiple hidden>
