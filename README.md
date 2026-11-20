@@ -39,12 +39,12 @@
 
 <table>
 <tr>
-<td width="50%"><img src="docs/shot-notifs.png" alt="Notifications page"><p align="center"><sub><b>Notifications</b> — real app icons, history by day, filters</sub></p></td>
-<td width="50%"><img src="docs/shot-timer.png" alt="Timer"><p align="center"><sub><b>Timer &amp; stopwatch</b> — keeps counting inside the closed island</sub></p></td>
+<td width="50%" valign="top"><img src="docs/shot-notifs.png" alt="Notifications page"><p align="center"><sub><b>Notifications</b> — real app icons, history by day, filters</sub></p></td>
+<td width="50%" valign="top"><img src="docs/shot-timer.png" alt="Timer"><p align="center"><sub><b>Timer &amp; stopwatch</b> — keeps counting inside the closed island</sub></p></td>
 </tr>
 <tr>
-<td width="50%"><img src="docs/shot-qr.png" alt="QR codes"><p align="center"><sub><b>QR codes</b> — dot styles, colours, logo and label; PNG / SVG</sub></p></td>
-<td width="50%"><img src="docs/shot-fx.png" alt="Currency converter"><p align="center"><sub><b>Currency converter</b> — just type <code>100 usd to try</code></sub></p></td>
+<td width="50%" valign="top"><img src="docs/shot-qr.png" alt="QR codes"><p align="center"><sub><b>QR codes</b> — dot styles, colours, logo and label; PNG / SVG</sub></p></td>
+<td width="50%" valign="top"><img src="docs/shot-fx.png" alt="Currency converter"><p align="center"><sub><b>Currency converter</b> — just type <code>100 usd to try</code></sub></p></td>
 </tr>
 </table>
 

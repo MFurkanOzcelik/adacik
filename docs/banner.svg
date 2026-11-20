@@ -112,5 +112,5 @@
 
   <!-- title -->
   <text x="450" y="322" fill="#fff" font-size="44" font-weight="700" text-anchor="middle" letter-spacing="-1">Adacık</text>
-  <text x="450" y="356" fill="#fff" fill-opacity=".55" font-size="16" text-anchor="middle">Windows için yüzen, akıllı çentik</text>
+  <text x="450" y="356" fill="#fff" fill-opacity=".55" font-size="16" text-anchor="middle">A floating, smart notch for Windows</text>
 </svg>
