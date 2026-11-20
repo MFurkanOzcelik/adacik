@@ -9,15 +9,18 @@
 <body>
 <div id="stage">
   <div id="shell" class="closed boot">
+    <div id="nring"></div>
     <div id="mini">
       <canvas id="miniArt" width="48" height="48"></canvas>
       <span id="miniText"><span id="miniInner"></span></span>
       <span class="eq"><i></i><i></i><i></i></span>
     </div>
-    <div id="info"><span id="infoClock"></span><span id="infoBat"><span class="batt"><i></i><svg class="bolt" viewBox="0 0 10 14" aria-hidden="true"><path d="M6.2 0 .6 7.9h3.6L3.4 14 9.4 5.8H5.6z"/></svg></span><span id="infoPct"></span></span></div>
+    <div id="info"><span id="infoDnd" hidden title="Rahatsız etme açık"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1z"/></svg></span><span id="infoClock"></span><span id="infoBat"><span id="infoPct"></span><span class="batt"><i></i></span><svg class="bolt" viewBox="0 0 10 14" aria-hidden="true"><path d="M6.2 0 .6 7.9h3.6L3.4 14 9.4 5.8H5.6z"/></svg></span><span id="infoBt" hidden><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><rect x="2.5" y="14" width="5" height="7" rx="2"/><rect x="16.5" y="14" width="5" height="7" rx="2"/></svg><b id="infoBtPct"></b></span></div>
+    <div id="act"></div>
+    <div id="shotv"></div>
+    <i id="pdot"></i>
     <div id="osd"><span id="osdIcon"></span><span id="osdBar"><i></i></span><b id="osdVal"></b></div>
     <div id="notif"><span id="notifIcon"></span><div class="nt"><div class="nh"><span id="notifApp"></span><span class="nnow">şimdi</span></div><b id="notifTitle"></b><span id="notifBody"></span></div></div>
-    <div id="nring"></div>
     <div id="tpill"><svg viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" class="tpbg"/><circle id="tpRing" cx="9" cy="9" r="7" stroke-dasharray="44"/></svg><b id="tpTime"></b><span id="tpLabel"></span></div>
     <button id="pinBtn" title="Pin open (Ctrl+Alt+N)" aria-pressed="false"></button>
     <div id="glow"></div>

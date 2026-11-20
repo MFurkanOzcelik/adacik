@@ -56,6 +56,7 @@ const ICON = {
   flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/>',
   scanText: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8h8M7 12h10M7 16h6"/>',
   bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  moon: '<path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1z"/>',
   phone: '<rect width="12" height="20" x="6" y="2" rx="2.5"/><path d="M11 18h2"/>',
   refresh: '<path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/>',
   link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
@@ -69,6 +70,11 @@ const ICON = {
   check: '<path d="M20 6 9 17l-5-5"/>',
   pin: '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>',
   bksp: '<path d="M8 5h12v14H8l-6-7z"/><path d="M12 9l5 6M17 9l-5 6"/>',
+  cam: '<path d="M15 10l5-3v10l-5-3"/><rect x="2" y="6" width="13" height="12" rx="2.5"/>',
+  mic: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>',
+  headphones: '<path d="M3 14v-2a9 9 0 0 1 18 0v2"/><rect x="2.5" y="14" width="5" height="7" rx="2"/><rect x="16.5" y="14" width="5" height="7" rx="2"/>',
+  files: '<path d="M8 3h7l5 5v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M15 3v5h5M3 7v12a2 2 0 0 0 2 2h9"/>',
+  loc: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
 };
 const ic = (n, s = 20, extra = '') => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ${extra}>${ICON[n]}</svg>`;
 
@@ -82,7 +88,8 @@ let clips = [], winAccent = '#f08a24', wallAccent = null;
 const ui = { open: false, pinned: false, view: 'grid', page: 0, edit: false };
 
 function save(k) { api.send('store:set', k, S[k]); }
-function toast(t) { const el = $('#toast'); el.textContent = t; el.style.top = (shell.offsetHeight + (ui.open ? 6 : 0) + 12) + 'px'; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 1700); }
+// below the island; on very tall pages (settings) it floats over the panel's bottom edge instead of leaving the window
+function toast(t) { const el = $('#toast'); el.textContent = t; el.style.top = Math.min(shell.offsetHeight + (ui.open ? 6 : 0) + 12, innerHeight - (el.offsetHeight || 34) - 10) + 'px'; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 1700); }
 
 /* ---------- theme ---------- */
 const darkMQ = matchMedia('(prefers-color-scheme: dark)');
@@ -104,7 +111,7 @@ api.on('accent:wall', c => { wallAccent = c; applyTheme(); });
 const SIZES = {
   grid: [700, 262], media: [600, 360], clipboard: [700, 166], notes: [700, 326], calendar: [740, 352],
   monitor: [820, 450], start: [760, 536], calc: [660, 404], text: [700, 314], shelf: [700, 256],
-  settings: [700, 496], translate: [780, 66 + 300], fx: [600, 66 + 96], phone: [820, 66 + 430], timer: [680, 366], ocr: [620, 302], qr: [740, 66 + 396], launch: [700, 398], color: [700, 250], notifs: [700, 66 + 380],
+  settings: [700, 584], weather: [640, 66 + 300], translate: [780, 66 + 300], fx: [600, 66 + 96], phone: [820, 66 + 430], timer: [680, 366], ocr: [620, 302], qr: [740, 66 + 396], launch: [700, 398], color: [700, 250], notifs: [700, 66 + 380],
 };
 let lastSize = '';
 function sizeShell(w, h) {
@@ -116,35 +123,181 @@ function sizeShell(w, h) {
 // What the closed island shows, most important first.
 const OSD = { kind: '', v: 0, muted: false, until: 0, t: 0 };
 const NQ = { queue: [], cur: null, hold: false, t: 0 };
+const SHOT = { cur: null, hold: false, t: 0, anim: null, at: 0 };   // the screenshot shown in the island
 function closedMode() {
   if (OSD.until > Date.now()) return 'osd';
+  if (SHOT.cur) return 'shot';   // a screenshot was just taken: right after the user did it, so before notifications
   if (NQ.cur) return 'notif';
+  if (ACT.until > Date.now() || (S.settings.progress !== false && ACT.prog.length)) return 'act';
   if (S.settings.timerPill !== false && (T.running || T.done || SW.running)) return 'timer';
   if (hasMini()) return 'mini';
-  if (S.settings.alwaysShow !== false) return 'info';
+  if (S.settings.alwaysShow !== false || privOn()) return 'info';   // the camera/mic dot needs something to sit on
   return 'idle';
 }
 function showInfo() { return closedMode() === 'info'; }
 function collapsedSize() {
   const grow = ui.near && S.settings.hoverOpen === false ? 12 : 0, m = closedMode();
   if (m === 'osd') return [236, 38];
-  if (m === 'notif') return [380, 64];
+  if (m === 'shot') return [336 + shotTw(), 104];
+  if (m === 'notif') return [NQ.w || 320, 50];
+  if (m === 'act') return ACT.until > Date.now() ? [ACT.bw || 300, 40] : [340, 46];
   if (m === 'timer') return [(T.label || (SW.running && !T.running) ? 210 : 140) + grow, 32 + (grow ? 4 : 0)];
   if (m === 'mini') return [270 + grow, 38];
-  if (m === 'info') return [(battery.present ? 168 : 112) + grow, 30 + (grow ? 4 : 0)];
+  if (m === 'info') return [(battery.present ? 168 : 112) + (btShown() ? 52 : 0) + (privOn() ? 16 : 0) + (dndOn() ? 20 : 0) + grow, 30 + (grow ? 4 : 0)];
   return grow ? [168, 16] : [140, 8];
 }
 function closedState() {
   const m = ui.open ? 'open' : closedMode();
   shell.classList.toggle('has-mini', m === 'mini');
   shell.classList.toggle('has-info', m === 'info');
-  ['osd', 'notif', 'timer'].forEach(k => shell.classList.toggle('mode-' + k, m === k));
+  ['osd', 'shot', 'notif', 'timer', 'act'].forEach(k => shell.classList.toggle('mode-' + k, m === k));
+  if (m === 'act') paintAct();
+  paintPriv();
   shell.classList.toggle('near', !!ui.near && !ui.open);
   shell.classList.toggle('tucked', m === 'idle' && !ui.near && S.settings.alwaysShow === false);
   shell.classList.toggle('capsule', S.settings.shape === 'capsule');
 }
 let lastMode = '';
-function refreshClosed() { if (ui.open) return; const m = closedMode(); if (m !== lastMode) { lastMode = m; if (m === 'timer') paintTimerPill(); applyClosedSize(); } }
+function refreshClosed() { if (ui.open) return; const m = closedMode(); if (m !== lastMode) { lastMode = m; if (m === 'timer') paintTimerPill(); applyClosedSize(); } else if (m === 'act') { paintAct(); applyClosedSize(); } }
+
+// ---- activity: camera/mic in use, downloads & copies, Bluetooth headphones (all from the helper) ----
+const ACT = { cam: [], mic: [], prog: [], until: 0, banner: null, bw: 300, painted: '', low: {} };
+let BT = null;   // the connected headset: { id, name, bat }
+const privOn = () => S.settings.privacy !== false && (ACT.cam.length > 0 || ACT.mic.length > 0);
+const btShown = () => S.settings.btInfo !== false && !!BT;
+const mb = b => b >= 1073741824 ? (b / 1073741824).toFixed(2).replace('.', ',') + ' GB' : b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+// a short message in the island: icon, title, detail; width fits the text roughly
+function banner(b, ms) {
+  ACT.banner = b; ACT.until = Date.now() + (ms || 3000);
+  ACT.bw = Math.min(380, Math.max(240, 96 + 7.2 * ((b.title || '').length + (b.sub || '').length * .85)));
+  ACT.painted = ''; lastMode = ''; refreshClosed();
+  clearTimeout(ACT.t); ACT.t = setTimeout(refreshClosed, (ms || 3000) + 30);
+}
+function paintAct() {
+  const el = $('#act'); let html, key;
+  if (ACT.until > Date.now() && ACT.banner) {
+    const b = ACT.banner; key = 'b' + JSON.stringify(b);
+    html = `<span class="acic" style="--c:${b.color || 'var(--txt)'}">${ic(b.icon, 17)}</span><div class="act"><b>${esc(b.title)}</b>${b.sub ? `<small>${esc(b.sub)}</small>` : ''}</div>${b.ring != null ? `<span class="acring" style="--p:${b.ring}"><i>${b.ring}</i></span>` : ''}`;
+  } else {
+    const p = ACT.prog[0] || {}, more = ACT.prog.length - 1;
+    const copy = p.k === 'copy', title = copy ? 'Dosyalar kopyalanıyor' : (p.name || 'İndiriliyor');
+    const sub = copy ? '%' + p.pct : mb(p.bytes || 0) + (p.rate > 1024 ? ' · ' + mb(p.rate) + '/sn' : '');
+    key = 'p' + title + sub + more;
+    html = `<span class="acic">${ic(copy ? 'files' : 'down', 17)}</span><div class="act"><b>${esc(title)}</b><div class="acbar ${copy ? '' : 'flow'}"><i style="${copy ? 'width:' + p.pct + '%' : ''}"></i></div></div><small class="acmeta">${esc(sub)}${more > 0 ? ` · +${more}` : ''}</small>`;
+  }
+  if (key === ACT.painted) return;   // most updates change nothing visible
+  ACT.painted = key; el.innerHTML = html;
+}
+function paintPriv() {
+  const on = privOn() && !ui.open;
+  shell.classList.toggle('priv', on); shell.classList.toggle('priv-cam', on && ACT.cam.length > 0);
+  const d = $('#pdot'); if (on) d.title = [ACT.cam.length ? 'Kamera: ' + ACT.cam.join(', ') : '', ACT.mic.length ? 'Mikrofon: ' + ACT.mic.join(', ') : ''].filter(Boolean).join(' · ');
+}
+function onAct(a) {
+  const newCam = a.cam.filter(n => !ACT.cam.includes(n)), newMic = a.mic.filter(n => !ACT.mic.includes(n) && !a.cam.includes(n));
+  ACT.cam = a.cam; ACT.mic = a.mic; ACT.prog = a.prog;
+  if (S.settings.privacy !== false) {   // like a phone: say who just started using the camera or microphone
+    if (newCam.length) banner({ icon: 'cam', color: '#34c759', title: 'Kamera kullanılıyor', sub: newCam.join(', ') }, 2600);
+    else if (newMic.length) banner({ icon: 'mic', color: '#ff9f0a', title: 'Mikrofon kullanılıyor', sub: newMic.join(', ') }, 2600);
+  }
+  paintPriv(); paintInfo(); lastMode = ''; refreshClosed();
+}
+function onActDone(d) {
+  if (S.settings.progress === false) return;
+  if (d.k === 'copy') banner({ icon: 'check', color: '#34c759', title: 'Kopyalama tamamlandı' }, 2500);
+  else { ACT.donePath = d.path; banner({ icon: 'check', color: '#34c759', title: d.name, sub: 'İndirildi · ' + mb(d.size || 0) + ' · göstermek için tıkla', path: d.path }, 4000); }
+}
+function onBt(b) {
+  const was = BT && BT.id === b.id;
+  if (b.on) BT = { id: b.id, name: b.name, bat: b.bat }; else if (was || !BT) BT = null;
+  paintInfo(); lastMode = ''; refreshClosed();
+  if (b.first || S.settings.btInfo === false) return;   // already connected when the app started: just show it in the pill
+  if (b.on && !was) { ACT.low[b.id] = false; banner({ icon: 'headphones', title: b.name, sub: b.bat >= 0 ? 'Bağlandı · pil %' + b.bat : 'Bağlandı', ring: b.bat >= 0 ? b.bat : null }, 3200); }
+  else if (!b.on && was) banner({ icon: 'headphones', title: b.name, sub: 'Bağlantı kesildi' }, 2500);
+  else if (b.on && b.bat >= 0 && b.bat <= 15 && !ACT.low[b.id]) { ACT.low[b.id] = true; banner({ icon: 'headphones', color: '#ff453a', title: b.name, sub: 'Pil azaldı · %' + b.bat, ring: b.bat }, 4000); }
+}
+api.on('act', onAct); api.on('act:done', onActDone); api.on('act:bt', onBt);
+// ---- screenshot island: Win+Shift+S / PrtScn → the shot in the island with what comes next ----
+// The Snipping Tool has already put it on the clipboard, so the island offers the next steps: read its
+// text, keep it on the shelf, send it to the phone, open it (or save it when Windows didn't); a click on the
+// thumbnail opens it too. It stays 6 s; hovering keeps it there.
+const SHOT_MS = 6000;
+// the thumbnail keeps the shot's shape (78 px tall, 64–150 px wide) so nothing is cropped; the island widens with it
+const shotTw = () => SHOT.cur ? Math.round(clamp(78 * SHOT.cur.w / Math.max(1, SHOT.cur.h), 64, 150)) : 116;
+api.on('shot:new', s => {
+  if (S.settings.shotIsland === false) return;
+  SHOT.cur = s; SHOT.hold = false; SHOT.busy = false; SHOT.at = Date.now();
+  paintShot(); lastMode = ''; refreshClosed(); shotTimer(SHOT_MS);
+});
+function shotTimer(ms) {
+  clearTimeout(SHOT.t); SHOT.t = setTimeout(() => endShot(), ms);
+  const bar = $('#shotv .sbar i'); if (!bar) return;
+  if (SHOT.anim) SHOT.anim.cancel();
+  SHOT.anim = bar.animate([{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: ms, easing: 'linear', fill: 'forwards' });
+}
+function shotHold(on) {
+  if (!SHOT.cur) return;
+  SHOT.hold = on;
+  if (on) { clearTimeout(SHOT.t); if (SHOT.anim) SHOT.anim.pause(); }
+  else if (!SHOT.busy) shotTimer(3000);   // the cursor left without choosing: 3 more seconds
+}
+function endShot(force) {
+  if (!SHOT.cur || (SHOT.hold && !force)) return;
+  clearTimeout(SHOT.t); SHOT.cur = null; SHOT.hold = false; SHOT.busy = false; lastMode = ''; refreshClosed();
+}
+function paintShot() {
+  const s = SHOT.cur, el = $('#shotv'); if (!s) return;
+  const acts = [['ocr', 'scanText', 'Metni çıkar'], ['shelf', 'shelf', 'Rafa ekle'], ['phone', 'phone', 'Telefona'], s.saved ? ['open', 'image', 'Aç'] : ['save', 'down', 'Kaydet']];
+  el.innerHTML = `<img class="sthumb" src="${s.thumb}" style="width:${shotTw()}px" draggable="false" title="Açmak için tıkla" alt="">
+    <div class="sside"><div class="shead"><b>Ekran görüntüsü</b><span>Panoda${s.saved ? ' · kaydedildi' : ''} · ${s.w}×${s.h}</span></div>
+    <div class="sacts">${acts.map(([a, i, l]) => `<button data-a="${a}">${ic(i, 17)}<span>${l}</span></button>`).join('')}</div></div><span class="sbar"><i></i></span>`;
+  // a click on the thumbnail opens the screenshot (like "Aç")
+  $('.sthumb', el).onclick = e => { e.stopPropagation(); api.send('open', s.path); endShot(true); };
+  $$('[data-a]', el).forEach(b => b.onclick = e => { e.stopPropagation(); shotAct(b.dataset.a, b); });
+}
+async function shotAct(a, btn) {
+  const s = SHOT.cur; if (!s || SHOT.busy) return;
+  const name = s.path.split('\\').pop();
+  if (a === 'ocr') {   // can take a second or two: the button says so meanwhile
+    SHOT.busy = true; clearTimeout(SHOT.t); if (SHOT.anim) SHOT.anim.pause(); btn.classList.add('busy'); btn.lastChild.textContent = 'Okunuyor…';
+    const t = await api.invoke('ocr:file', s.path); endShot(true);
+    if (t) { OCR.text = t; api.send('clips:write', t); banner({ icon: 'scanText', color: 'var(--accent)', title: 'Metin panoya kopyalandı', sub: t.replace(/\s+/g, ' ').slice(0, 52) + ' · tamamı için tıkla', action: 'ocr' }, 4200); }
+    else banner({ icon: 'scanText', title: 'Görüntüde metin bulunamadı', sub: 'Görüntü yine panoda' }, 2600);
+  } else if (a === 'shelf') {
+    S.shelf = [{ name, path: s.path }, ...S.shelf.filter(x => x.path !== s.path)].slice(0, 30); save('shelf'); endShot(true);
+    banner({ icon: 'shelf', color: 'var(--accent)', title: 'Dosya rafına eklendi', sub: 'Rafı açmak için tıkla', action: 'shelf' }, 2800);
+  } else if (a === 'phone') {
+    SHOT.busy = true; const r = await api.invoke('shot:phone', s.path); endShot(true);
+    if (!r || r.error === 'none') banner({ icon: 'phone', title: 'Bağlı telefon yok', sub: 'Bir telefon bağlamak için tıkla', action: 'phone' }, 3500);
+    else if (r.error) banner({ icon: 'phone', color: '#ff453a', title: 'Gönderilemedi', sub: 'Dosya bulunamadı' }, 2600);
+    else banner({ icon: 'phone', color: 'var(--accent)', title: r.online ? r.name + ' cihazına gönderildi' : r.name + ' için hazır', sub: r.online ? 'Telefondaki Adacık sayfasından indir' : 'Telefon bağlanınca indirebilir' }, 3200);
+  } else if (a === 'open') {
+    api.send('open', s.path); endShot(true);
+  } else if (a === 'save') {
+    const p = await api.invoke('shot:save', s.path); endShot(true);
+    banner(p ? { icon: 'check', color: '#34c759', title: 'Ekran görüntüsü kaydedildi', sub: 'Resimler › Ekran görüntüleri · göstermek için tıkla', path: p } : { icon: 'x', color: '#ff453a', title: 'Kaydedilemedi' }, 3500);
+  }
+}
+// something was copied anywhere in Windows: a short note in the closed island
+function onClipNew(c) {
+  if (S.settings.copyNote === false || ui.open || dndOn()) return;
+  banner(c.type === 'image' ? { icon: 'image', color: 'var(--accent)', title: 'Görsel panoya kopyalandı', sub: c.w ? c.w + ' × ' + c.h : '' }
+    : { icon: 'copy', color: 'var(--accent)', title: 'Metin panoya kopyalandı', sub: c.len + ' karakter' }, 1800);
+}
+api.on('clip:new', onClipNew);
+
+// ---- automatic updates (state from updater.js) ----
+let UPD = null, updTold = '';
+const updLabel = st => !st ? '' : st.status === 'checking' ? 'Denetleniyor…' : st.status === 'downloading' ? `${st.version} indiriliyor %${st.percent}` : st.status === 'ready' ? `${st.version} hazır · Şimdi kur` : st.status === 'none' ? 'Güncel · Denetle' : st.status === 'error' ? 'Denetlenemedi · Tekrar dene' : st.status === 'dev' ? 'Geliştirme sürümü' : 'Güncellemeleri denetle';
+function paintUpd() { const b = $('#supd'); if (!b || !UPD) return; b.textContent = updLabel(UPD); b.classList.toggle('ready', UPD.status === 'ready'); b.title = UPD.status === 'error' ? UPD.error : ''; b.disabled = ['checking', 'downloading', 'dev'].includes(UPD.status); }
+api.on('update', st => {
+  UPD = st; paintUpd();
+  if (st.status === 'ready' && updTold !== st.version) {   // once per version
+    updTold = st.version;
+    if (ui.open) toast('Adacık ' + st.version + ' indirildi · kapanınca kurulur');
+    else banner({ icon: 'down', color: 'var(--accent)', title: 'Adacık ' + st.version + ' hazır', sub: 'Kurmak için tıkla · kapanınca da kurulur', action: 'update' }, 8000);
+  }
+});
 // ---- volume / brightness indicator ----
 function showOsd(kind, v, muted) {
   if (S.settings.osd === false || ui.open) return;
@@ -155,19 +308,89 @@ function showOsd(kind, v, muted) {
   lastMode = 'osd'; applyClosedSize();
   clearTimeout(OSD.t); OSD.t = setTimeout(refreshClosed, 1650);
 }
+// ---- Do Not Disturb: the app's own switch, or Windows' DND / Focus while "follow Windows" is on ----
+// Notifications (and copy notes) stay out of the island and go to the history quietly; things the user is
+// doing right now (volume, camera, downloads, the timer) still show. When it ends, the island says what came.
+let WDND = -1, dndSince = 0;   // WDND: Windows' state from the helper (0 off, 1 priority only, 2 alarms only)
+const dndOn = () => !!S.settings.dnd || (S.settings.dndWin !== false && WDND > 0);
+function dndChanged(was) {
+  const now = dndOn(); if (now === was) return;
+  if (now) dndSince = Date.now();
+  else if (dndSince) {
+    const n = (S.notifs || []).filter(e => e.at >= dndSince).length; dndSince = 0;
+    // only worth a word when something came in meanwhile
+    if (n) banner({ icon: 'bell', title: 'Rahatsız etme kapandı', sub: n + ' bildirim geldi · görmek için tıkla', action: 'notifs' }, 4500);
+  }
+  paintInfo(); applyClosedSize();
+  if (ui.open && ui.view === 'notifs') paintNotifs();
+  $$('.t-dnd').forEach(paintDndTile);   // the tile on the home page
+}
+function setDnd(v) { const was = dndOn(); S.settings.dnd = !!v; save('settings'); dndChanged(was); if (ui.open) toast(v ? 'Rahatsız etme açık · bildirimler sessizce kaydedilir' : 'Rahatsız etme kapalı'); }
+// Windows turns DND on by itself for a moment around full-screen things (the screenshot overlay, a game
+// starting): only an "on" that lasts 3 s counts, so those blips don't make the island flicker.
+let wdndT = 0;
+api.on('dnd:win', v => {
+  clearTimeout(wdndT);
+  const apply = () => { const was = dndOn(); WDND = v; dndChanged(was); };
+  if (v > 0 && !(WDND > 0)) wdndT = setTimeout(apply, 3000); else apply();
+});
+
 // ---- notification island ----
-api.on('notif', n => { if (S.settings.notifs !== false) notify(n); });
+// ---- messages relayed by Phone Link, and WhatsApp's empty "You may have new messages" ----
+// WhatsApp Desktop, when it isn't running, can only send a placeholder (the message is end-to-end encrypted,
+// so its push can't carry it). Phone Link relays the same message from the phone with the text a second
+// later, under its own name with "WhatsApp" as the title. So: Phone Link's relays are shown as the app
+// they came from (its icon, the chat as the title, the message as the text), the placeholder waits a few
+// seconds for the real thing and is dropped when it comes, and the same message from both sources shows once.
+const PHONE_LINK = /^Microsoft\.YourPhone_/i;
+const WA_EMPTY = /^(you may have new messages?|yeni mesaj(lar)?(ın|iniz|ınız)? olabilir)\.?$/i;
+const appAidOf = name => { const a = (S.notifs || []).find(x => x.app === name && x.aid && !PHONE_LINK.test(x.aid)); return a ? a.aid : (Object.keys(S.appIcons || {}).find(k => k.toLowerCase().includes(name.toLowerCase().replace(/\s+/g, ''))) || ''); };
+function relayed(n) {
+  const title = (n.title || '').trim(), body = (n.body || '').replace(/[\u200e\u200f\u202a-\u202e]/g, '').trim();
+  if (!PHONE_LINK.test(n.aid || '') || !title || title.length > 24 || /[:·]/.test(title) || !body) return n;
+  // "Chat (3 mesaj): text" / "Chat: text"  →  title "Chat", text "text"
+  const m = body.match(/^(.{1,80}?)(?:\s*\(\d+\s*(?:mesaj|messages?)\))?:\s+([\s\S]+)$/i);
+  if (!m) return n;   // not a relayed message (Phone Link's own notices stay as they are)
+  return { ...n, app: title, aid: appAidOf(title) || n.aid, title: m[1].trim(), body: m[2].trim(), icon: appAidOf(title) ? '' : n.icon, via: 'phone' };
+}
+let waHold = 0, waContentAt = 0;
+const recentMsgs = new Map();   // "app|title|body" → when, to show a message relayed twice only once
+function onNotif(raw) {
+  if (S.settings.notifs === false) return;
+  const n = relayed(raw), isWa = /whatsapp/i.test(n.app || '');
+  if (isWa && WA_EMPTY.test((n.title || '').trim()) && !(n.body || '').trim()) {   // the placeholder
+    if (Date.now() - waContentAt < 6000) return;   // the real message is already here
+    clearTimeout(waHold);
+    waHold = setTimeout(() => { waHold = 0; notify({ ...n, title: 'Yeni WhatsApp mesajı', body: 'İçeriği görmek için WhatsApp’ı aç' }); }, 4000);
+    return;
+  }
+  if (isWa) { waContentAt = Date.now(); if (waHold) { clearTimeout(waHold); waHold = 0; } }
+  const key = (n.app + '|' + n.title + '|' + n.body).toLowerCase(), now = Date.now();
+  for (const [k, t] of recentMsgs) if (now - t > 8000) recentMsgs.delete(k);
+  if (recentMsgs.has(key)) return;
+  recentMsgs.set(key, now);
+  notify(n);
+}
+api.on('notif', onNotif);
 // Every notification (Windows, phone, calendar) goes through here: kept in the history, then shown.
 function notify(n) {
+  if (n.icon && !n.iconN) { normIcon(n.icon).then(b => notify({ ...n, icon: b, iconN: true })); return; }   // the toast's own logo, trimmed first
   const e = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: Date.now(), app: n.app || 'Bildirim', title: n.title || '', body: n.body || '', aid: n.aid || '', to: n.to || '' };
   if (n.icon) S.notifIcons[e.app] = n.icon;
   S.notifs = [e, ...(S.notifs || [])].slice(0, 150); save('notifs'); save('notifIcons');
   n = { ...n, nid: e.id };
-  if (e.aid && !S.appIcons[e.aid]) api.invoke('notifs:icon', e.aid).then(b => {
+  if (e.aid && !S.appIcons[e.aid]) appIcon(e.aid).then(b => {
     if (!b) return; S.appIcons[e.aid] = b; save('appIcons');
     if (NQ.cur && NQ.cur.aid === e.aid) paintNotifIcon(NQ.cur);
     if (ui.open && ui.view === 'notifs') paintNotifs();
   });
+  // the Snipping Tool's own "copied to the clipboard" toast right after a screenshot: the island already said it
+  const snipEcho = /ScreenSketch/i.test(e.aid) && Date.now() - SHOT.at < 15000;
+  if (dndOn() || snipEcho) {   // Do Not Disturb: into the history without a sound (no island, no toast)
+    if (ui.open && ui.view === 'notifs') paintNotifs();
+    $$('.t-nt').forEach(el => TILES.notifs.live(el, el.dataset.sz));
+    return;
+  }
   if (ui.open) {
     if (ui.view === 'notifs') { S.notifSeen = Date.now(); save('notifSeen'); paintNotifs(); }
     else toast(e.app + ': ' + (e.title || e.body || 'Yeni bildirim'));
@@ -180,17 +403,56 @@ function nextNotif() {
   if (NQ.cur || !NQ.queue.length) return;
   const n = NQ.cur = NQ.queue.shift();
   paintNotifIcon(n);
+  // minimal: the icon says which app; title (or the app's name) and the message, one line each
+  const title = n.title || n.app || 'Bildirim', body = n.title ? (n.body || '') : (n.body || '');
   $('#notifApp').textContent = n.app || 'Bildirim';
-  $('#notifTitle').textContent = n.title || ''; $('#notifBody').textContent = n.body || '';
+  $('#notifTitle').textContent = title; $('#notifBody').textContent = body; $('#notifBody').hidden = !body;
+  // the island is only as wide as the text needs (roughly), between 230 and 360 px
+  NQ.w = Math.round(clamp(64 + Math.max(title.length * 7.4, body.length * 6.3), 230, 360));
   lastMode = 'notif'; applyClosedSize();
   clearTimeout(NQ.t); NQ.t = setTimeout(endNotif, 5500);
 }
+// Icons arrive in every shape: 64 px app icons with wide transparent margins, 150–300 px toast logos that
+// are mostly empty space. Trim them to their visible pixels and centre them in a 64 px square; a solid shape
+// (filled circle / square) is drawn a bit smaller so it looks as big as a line logo next to it.
+function normIcon(b64) {
+  return new Promise(res => {
+    if (!b64) return res('');
+    const im = new Image();
+    im.onerror = () => res(b64);
+    im.onload = () => {
+      try {
+        const w = im.naturalWidth, h = im.naturalHeight, c = document.createElement('canvas'); c.width = w; c.height = h;
+        const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, w, h).data;
+        let x0 = w, y0 = h, x1 = -1, y1 = -1, n = 0, lum = 0, sat = 0;
+        for (let y = 0; y < h; y++) for (let i = 0; i < w; i++) {
+          const p = (y * w + i) * 4; if (d[p + 3] <= 24) continue;
+          n++; if (i < x0) x0 = i; if (i > x1) x1 = i; if (y < y0) y0 = y; if (y > y1) y1 = y;
+          const mx = Math.max(d[p], d[p + 1], d[p + 2]), mn = Math.min(d[p], d[p + 1], d[p + 2]); lum += mx / 255; sat += mx ? (mx - mn) / mx : 0;
+        }
+        if (x1 < 0) return res(b64);
+        // an all-white logo (OpenAI, …) would vanish on a light panel: it goes on a dark rounded square
+        const white = lum / n > .86 && sat / n < .12;
+        const bw = x1 - x0 + 1, bh = y1 - y0 + 1, S2 = 64, k = (white ? .62 : n / (bw * bh) > .72 ? .94 : 1) * S2 / Math.max(bw, bh);
+        const o = document.createElement('canvas'); o.width = o.height = S2; const g = o.getContext('2d'); g.imageSmoothingQuality = 'high';
+        if (white) { g.fillStyle = '#1f1f23'; g.beginPath(); g.roundRect(0, 0, S2, S2, 15); g.fill(); }
+        g.drawImage(c, x0, y0, bw, bh, (S2 - bw * k) / 2, (S2 - bh * k) / 2, bw * k, bh * k);
+        res(o.toDataURL('image/png').split(',')[1]);
+      } catch { res(b64); }
+    };
+    im.src = 'data:image/png;base64,' + b64;
+  });
+}
+const appIcon = aid => api.invoke('notifs:icon', aid).then(b => b ? normIcon(b) : '');
 // The app's icon, and its main colour for the animated outline around the island.
 const ntIconOf = n => (n.aid && S.appIcons[n.aid]) || n.icon || S.notifIcons[n.app] || '';
+// Adacık's own notifications (phone link, calendar) have no app icon: they get the page's symbol
+const ntGlyph = n => ({ phone: 'phone', calendar: 'cal' })[n.to] || '';
+const ntFallback = (n, s) => ntGlyph(n) ? ic(ntGlyph(n), s) : esc(((n.app || '?').trim()[0] || '?').toLocaleUpperCase('tr-TR'));
 function paintNotifIcon(n) {
   const b = ntIconOf(n), el = $('#notifIcon');
   el.classList.toggle('img', !!b);
-  el.innerHTML = b ? `<img src="data:image/png;base64,${b}" alt="">` : esc(((n.app || '?').trim()[0] || '?').toLocaleUpperCase('tr-TR'));
+  el.innerHTML = b ? `<img src="data:image/png;base64,${b}" alt="">` : ntFallback(n, 17);
   iconColor(b).then(c => { if (NQ.cur === n) shell.style.setProperty('--nc', c || cssVar('--accent')); });
 }
 const colorCache = new Map();
@@ -238,6 +500,11 @@ function paintInfo() {
     $('#infoBat i').style.width = Math.max(4, pct) + '%'; $('#infoPct').textContent = '%' + pct;
     b.title = battery.charging ? 'Şarj oluyor' : 'Pil';
   }
+  const dn = $('#infoDnd'); dn.hidden = !dndOn(); dn.title = S.settings.dnd ? 'Rahatsız etme açık' : 'Windows rahatsız etme modunda';
+  // connected Bluetooth headphones: icon + their battery
+  const h = $('#infoBt'), on = btShown();
+  h.hidden = !on;
+  if (on) { setTxt($('#infoBtPct'), BT.bat >= 0 ? '%' + BT.bat : ''); h.title = BT.name + (BT.bat >= 0 ? ' · pil %' + BT.bat : ''); h.classList.toggle('low', BT.bat >= 0 && BT.bat <= 15); }
 }
 setInterval(paintInfo, 5000);
 api.on('battery:present', v => { battery.present = v; paintInfo(); if (!ui.open) applyClosedSize(); });
@@ -249,7 +516,8 @@ api.on('battery:present', v => { battery.present = v; paintInfo(); if (!ui.open)
   } catch { battery.present = false; }
   paintInfo(); if (!ui.open) applyClosedSize();
 })();
-function applyClosedSize() { const [w, h] = collapsedSize(); closedState(); sizeShell(w, h); }
+// Only while closed: shrinking the open panel to the pill size makes main see the cursor "outside" and close it.
+function applyClosedSize() { closedState(); if (ui.open) return; const [w, h] = collapsedSize(); sizeShell(w, h); }
 
 function setOpen(v) {
   if (v === ui.open) return;
@@ -274,9 +542,12 @@ function onHover(h) {
   // Hovering a notification keeps it on screen instead of opening the panel.
   if (h && !ui.open && closedMode() === 'notif') { NQ.hold = true; return; }
   if (!h && NQ.hold) { NQ.hold = false; clearTimeout(NQ.t); NQ.t = setTimeout(endNotif, 1200); }
+  // …and so does a screenshot: the cursor is on its way to one of its buttons
+  if (h && !ui.open && closedMode() === 'shot') { shotHold(true); return; }
+  if (!h && SHOT.hold) shotHold(false);
   if (h) { if (S.settings.hoverOpen !== false) setOpen(true); else if (!ui.open) applyClosedSize(); }
   // while the colour picker is open the cursor is out on the screen: keep the panel (and the picker) alive
-  else { if (!ui.pinned && !typing() && !ui.picking) setOpen(false); if (!ui.open) applyClosedSize(); }
+  else { if (!ui.pinned && !typing() && !ui.picking && !(ui.keepUntil > Date.now())) setOpen(false); if (!ui.open) applyClosedSize(); }
 }
 api.on('hover', onHover);
 // With "Open on hover" off, a click on the pill opens the panel.
@@ -285,6 +556,11 @@ shell.addEventListener('click', e => {
   const m = closedMode();
   if (m === 'notif') { ntFocus = NQ.cur && NQ.cur.nid; NQ.hold = false; endNotif(); ui.view = 'notifs'; }   // click opens it in the notifications page
   if (m === 'timer') ui.view = 'timer';                          // click on the countdown opens the timer page
+  if (m === 'shot') return;   // the screenshot island has its own buttons; the rest of it doesn't open the panel
+  // a banner that leads to a page ("DND ended · 3 notifications", "text copied", "added to the shelf"…)
+  if (m === 'act' && ACT.until > Date.now() && ACT.banner && ['notifs', 'ocr', 'shelf', 'phone'].includes(ACT.banner.action)) { ui.view = ACT.banner.action; ACT.until = 0; }
+  if (m === 'act' && ACT.until > Date.now() && ACT.banner && ACT.banner.action === 'update') { api.send('update:install'); ACT.until = 0; refreshClosed(); return; }   // "new version ready": install now
+  if (m === 'act' && ACT.until > Date.now() && ACT.banner && ACT.banner.path) { api.send('act:reveal', ACT.banner.path); ACT.until = 0; refreshClosed(); return; }   // finished download: show it in its folder
   setOpen(true);
 });
 function setPinned(v, quiet) {
@@ -297,7 +573,10 @@ $('#pinBtn').innerHTML = ic('pin', 13);
 $('#pinBtn').onclick = e => { e.stopPropagation(); setPinned(!ui.pinned); };
 api.on('toggle-pin', () => setPinned(!ui.pinned));
 function typing() { const a = document.activeElement; return a && /INPUT|TEXTAREA/.test(a.tagName); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (ui.view !== 'grid') go('grid'); else { setPinned(false, true); setOpen(false); } } });
+let gridSetPage = null;
+document.addEventListener('keydown', e => {
+  if (ui.open && ui.view === 'grid' && gridSetPage && !typing() && /^(ArrowDown|ArrowUp|PageDown|PageUp)$/.test(e.key)) { e.preventDefault(); gridSetPage(ui.page + (/Down$/.test(e.key) ? 1 : -1)); return; }
+  if (e.key === 'Escape') { if (ui.view !== 'grid') go('grid'); else { setPinned(false, true); setOpen(false); } } });
 
 // Window is click-through except over the shell.
 var ign = true;
@@ -327,13 +606,13 @@ function addShelfFiles(files) {
 let viewTimers = [];
 function stopViewTimers() { viewTimers.forEach(clearInterval); viewTimers = []; cancelAnimationFrame(lyrRaf); lyrRaf = 0; }
 function every(fn, ms) { const t = setInterval(fn, ms); viewTimers.push(t); return t; }
-const TITLES = { media: 'Medya', clipboard: 'Pano', notes: 'Notlar', calendar: 'Takvim', monitor: 'Sistem izleyici', start: 'Başlat', calc: 'Hesap makinesi', text: 'Metin araçları', shelf: 'Dosya rafı', settings: 'Ayarlar', launch: 'Hızlı başlat', color: 'Renk seçici', qr: 'QR kod', timer: 'Zamanlayıcı', ocr: 'Metin yakala', calsrc: 'Bağlı takvimler', translate: 'Çeviri', fx: 'Döviz çevirici', phone: 'Telefon bağlantısı', notifs: 'Bildirimler' };
-const VIEWS = { grid: vGrid, media: vMedia, clipboard: vClip, notes: vNotes, calendar: vCal, monitor: vMon, start: vStart, calc: vCalc, text: vText, shelf: vShelf, settings: vSettings, launch: vLaunch, color: vColor, qr: vQr, timer: vTimer, ocr: vOcr, calsrc: vCalSrc, translate: vTranslate, fx: vFx, phone: vPhone, notifs: vNotifs };
+const TITLES = { media: 'Medya', clipboard: 'Pano', notes: 'Notlar', calendar: 'Takvim', monitor: 'Sistem izleyici', start: 'Başlat', calc: 'Hesap makinesi', text: 'Metin araçları', shelf: 'Dosya rafı', settings: 'Ayarlar', launch: 'Hızlı başlat', color: 'Renk seçici', qr: 'QR kod', timer: 'Zamanlayıcı', ocr: 'Metin yakala', calsrc: 'Bağlı takvimler', translate: 'Çeviri', fx: 'Döviz çevirici', phone: 'Telefon bağlantısı', notifs: 'Bildirimler', weather: 'Hava durumu' };
+const VIEWS = { grid: vGrid, media: vMedia, clipboard: vClip, notes: vNotes, calendar: vCal, monitor: vMon, start: vStart, calc: vCalc, text: vText, shelf: vShelf, settings: vSettings, launch: vLaunch, color: vColor, qr: vQr, timer: vTimer, ocr: vOcr, calsrc: vCalSrc, translate: vTranslate, fx: vFx, phone: vPhone, notifs: vNotifs, weather: vWeather };
 
-function go(name, first) {
+function go(name, first, still) {
   const run = () => {
     stopViewTimers();
-    ui.view = name; view.className = ''; view.innerHTML = '';
+    ui.view = name; shell.dataset.view = name; view.className = ''; view.innerHTML = '';   // (data-view lets CSS style per page)
     bar.classList.toggle('show', name !== 'grid');
     $('#title').textContent = TITLES[name] || '';
     $('#barActions').innerHTML = '';
@@ -341,23 +620,26 @@ function go(name, first) {
     $('#back').className = 'icon';
     $('#back').onclick = () => go({ calsrc: 'calendar' }[name] || 'grid');
     VIEWS[name](view);
-    view.classList.add('enter');
+    if (!still) view.classList.add('enter');
     $$('#view > *').forEach((el, i) => el.style.setProperty('--i', i));
     $$('.page > .tile', view).forEach((el, i) => el.style.setProperty('--i', i));
     const [w, h] = SIZES[name]; sizeShell(w, h); paintGlow();
   };
   if (first) run();
-  else { view.style.transition = 'opacity .1s'; view.style.opacity = 0; setTimeout(() => { run(); view.style.opacity = 1; }, 100); }
+  // the island may close during the fade (cursor left right after a click): then don't render the page,
+  // or it would size the closed island like the open panel
+  else { view.style.transition = 'opacity .1s'; view.style.opacity = 0; setTimeout(() => { if (ui.open) run(); view.style.opacity = 1; }, 100); }
 }
 $('#back').onclick = () => go('grid');
 
 /* ---------- tiles ---------- */
-const DEFAULT_ORDER = ['timer', 'media', 'clipboard', 'text', 'launch', 'shot', 'shelf', 'coffee', 'notes', 'pick', 'calc', 'monitor', 'settings', 'calendar', 'start', 'qr', 'ocr', 'translate', 'fx', 'phonelink', 'notifs'];
+const DEFAULT_ORDER = ['timer', 'media', 'clipboard', 'text', 'launch', 'shot', 'shelf', 'coffee', 'dnd', 'notes', 'pick', 'calc', 'monitor', 'settings', 'calendar', 'start', 'qr', 'ocr', 'translate', 'fx', 'phonelink', 'notifs'];
 const TILES = {
   timer: { s: 'big', name: 'Zamanlayıcı', icon: 'timer', draw: tTimer },
   media: { s: 'big', name: 'Medya', icon: 'music', draw: tMedia },
   clipboard: { s: 'big', name: 'Pano', icon: 'clip', draw: tClip },
   coffee: { s: 'wide', name: 'Kahve', icon: 'cup', draw: tCoffee },
+  dnd: { s: 'wide', name: 'Rahatsız etme', icon: 'moon', draw: tDnd },
   notes: { s: 'wide', name: 'Notlar', icon: 'note', draw: tNotes, act: () => go('notes') },
   calendar: { s: 'wide', name: 'Takvim', icon: 'cal', draw: el => tWide(el, 'cal', 'Takvim', calTileSub(), 'calendar') },
   start: { s: 'wide', name: 'Başlat', icon: 'grid', draw: el => tWide(el, 'grid', 'Başlat', 'Uygulamalar ve arama', 'start'), act: () => go('start') },
@@ -376,24 +658,83 @@ const TILES = {
   phonelink: { s: 'small', name: 'Telefon', icon: 'phone', act: () => go('phone') },
   notifs: { s: 'small', name: 'Bildirimler', icon: 'bell', act: () => go('notifs'), live: tNotifs },
 };
-const COLS = 8, ROWS = 3, SPAN = { big: [2, 2], wide: [2, 1], small: [1, 1] };
+const COLS = 4, ROWS = 3, SPAN = { big: [2, 2], wide: [2, 1], small: [1, 1] };
+const CELL = 76.5, PAGER_W = COLS * CELL + (COLS - 1) * 8, MEDIA_W = 2 * CELL + 8;   // px
+// the media tile can live in its own fixed column right of the pages (settings: "Medyayı sağa sabitle")
+const pinnedOut = id => id === 'media' && S.settings.mediaPin !== false;
 // Sizes each tile can take; the first one is its default.
-const ALLOWED = { timer: ['big', 'wide'], media: ['big', 'wide'], clipboard: ['big', 'wide'], coffee: ['wide', 'small'], notes: ['wide', 'small'], calendar: ['wide', 'small'], start: ['wide', 'small'] };
+const ALLOWED = { timer: ['big', 'wide'], media: ['big', 'wide'], clipboard: ['big', 'wide'], coffee: ['wide', 'small'], dnd: ['wide', 'small'], notes: ['wide', 'small'], calendar: ['wide', 'small'], start: ['wide', 'small'] };
 const allowed = id => ALLOWED[id] || ['small', 'wide'];
-const tsize = id => { const v = (S.settings.sizes || {})[id]; return allowed(id).includes(v) ? v : allowed(id)[0]; };
-function resizeTile(id) {
-  const st = S.settings, a = allowed(id), cur = tsize(id), next = a[(a.indexOf(cur) + 1) % a.length];
-  st.sizes = { ...(st.sizes || {}), [id]: next };
-  const page = st.pages.find(p => p.includes(id));
-  if (page && !fits(page)) { st.sizes[id] = cur; toast('Bu sayfada daha büyük kutuya yer yok'); return false; }
-  save('settings'); return true;
+// A tile takes any span [width, height] in cells, from the smallest drawing it has up to the whole page.
+// (Saved as "WxH"; older saves hold a design name: small / wide / big.)
+const minSpan = id => { const a = allowed(id); return a.includes('small') ? [1, 1] : a.includes('wide') ? [2, 1] : [2, 2]; };
+function spanOf(id, over) {
+  if (over && over[id]) return over[id];
+  const v = (S.settings.sizes || {})[id], mn = minSpan(id), m = /^(\d)x(\d)$/.exec(v || '');
+  const s = m ? [+m[1], +m[2]] : allowed(id).includes(v) ? SPAN[v] : SPAN[allowed(id)[0]];
+  return [clamp(s[0], mn[0], COLS), clamp(s[1], mn[1], ROWS)];
+}
+// the tile's drawing that suits a span best
+function designFor(id, [w, h]) { const a = allowed(id); if (w >= 2 && h >= 2 && a.includes('big')) return 'big'; if (w >= 2 && a.includes('wide')) return 'wide'; return a.includes('small') ? 'small' : a[0]; }
+const tsize = id => designFor(id, spanOf(id));
+// Re-draw the grid in place (edit mode): no fade, no entrance animation, same scroll position.
+function regrid() { const b = $('.pager.board'); ui.keepScroll = b ? b.scrollTop : null; go('grid', true, true); }
+// FLIP: remember where every tile is, change things, then let each tile glide from its old place
+// and size to the new one (tiles that just appeared fade in). `scope` limits it to one page.
+const EASE_OUT = 'cubic-bezier(.2, .9, .25, 1)';
+function flipTiles(change, scope) {
+  const sel = '.pager .tile[data-id]', inScope = e => !scope || scope.contains(e);
+  const before = new Map($$(sel).filter(inScope).map(e => [e.dataset.id, e.getBoundingClientRect()]));
+  change();
+  $$(sel).filter(e => !scope || scope.contains(e)).forEach(e => {
+    const a = before.get(e.dataset.id), b = e.getBoundingClientRect();
+    if (!a) { e.animate([{ opacity: 0, transform: 'scale(.92)' }, { opacity: 1, transform: 'none' }], { duration: 280, easing: EASE_OUT }); return; }
+    const dx = a.left - b.left, dy = a.top - b.top, sx = a.width / b.width, sy = a.height / b.height;
+    if (Math.abs(dx) < .5 && Math.abs(dy) < .5 && Math.abs(sx - 1) < .01 && Math.abs(sy - 1) < .01) return;
+    e.animate([{ transformOrigin: 'top left', transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }, { transformOrigin: 'top left', transform: 'none' }],
+      { duration: Math.min(420, 240 + Math.hypot(dx, dy) * .25), easing: EASE_OUT });
+  });
+}
+// Edit mode: drag a tile's right edge, bottom edge or corner; it snaps to whole cells and the
+// other tiles move out of the way. If the page gets too full, its last tiles move on to the next page.
+function startResize(e, el, id, ids, axis) {
+  e.preventDefault(); e.stopPropagation();
+  const r = el.getBoundingClientRect(), start = spanOf(id), cw = (r.width + 8) / start[0], ch = (r.height + 8) / start[1], mn = minSpan(id);
+  const x0 = e.clientX, y0 = e.clientY; let cur = start, ok = true;
+  el.draggable = false; el.classList.add('resizing');
+  const tag = document.createElement('span'); tag.className = 'rztag'; tag.textContent = start[0] + ' × ' + start[1]; el.appendChild(tag);
+  const move = ev => {
+    const w = axis === 's' ? start[0] : clamp(Math.round((r.width + ev.clientX - x0 + 8) / cw), mn[0], COLS);
+    const h = axis === 'e' ? start[1] : clamp(Math.round((r.height + ev.clientY - y0 + 8) / ch), mn[1], ROWS);
+    if (w === cur[0] && h === cur[1]) return;
+    cur = [w, h]; ok = fits(ids, { [id]: cur });
+    flipTiles(() => { el.style.gridColumn = 'span ' + w; el.style.gridRow = 'span ' + h; }, el.closest('.page'));
+    el.classList.toggle('spill', !ok); tag.classList.remove('pop'); void tag.offsetWidth; tag.classList.add('pop');
+    tag.textContent = w + ' × ' + h; tag.title = ok ? '' : 'Bıraktığında bu sayfanın son kutuları sonraki sayfaya geçer';   // amber = some tiles will move on
+  };
+  const up = () => {
+    window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+    if (cur[0] !== start[0] || cur[1] !== start[1]) {
+      const st = S.settings; st.sizes = { ...(st.sizes || {}), [id]: cur.join('x') };
+      // make room: the page's last other tiles go to the top of the next page (which passes on its own overflow)
+      const p = st.pages.findIndex(pg => pg.includes(id)), moved = [];
+      if (p >= 0) while (!fits(st.pages[p])) {
+        const other = [...st.pages[p]].reverse().find(x => x !== id); if (!other) break;
+        st.pages[p] = st.pages[p].filter(x => x !== other); if (!st.pages[p + 1]) st.pages.splice(p + 1, 0, []); st.pages[p + 1].unshift(other); moved.push(other);
+      }
+      layout(); save('settings');
+      if (moved.length) toast(moved.length + ' kutu sonraki sayfaya geçti');
+    }
+    flipTiles(regrid);
+  };
+  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
 }
 function order() { const o = (S.settings.order || DEFAULT_ORDER).map(id => id === 'phone' ? 'launch' : id).filter((id, i, a) => TILES[id] && a.indexOf(id) === i); DEFAULT_ORDER.forEach(id => { if (!o.includes(id)) o.push(id); }); return o; }
-// Packs tiles the way CSS grid "row dense" does and says whether they fit in 8×3 cells.
+// Packs tiles the way CSS grid "row dense" does and says whether they fit in the page's cells.
 function rowsUsed(ids) {
   const g = Array.from({ length: ROWS }, () => Array(COLS).fill(0)); let used = 0;
   for (const id of ids) {
-    const [w, h] = SPAN[tsize(id)]; let ok = false;
+    const [w, h] = spanOf(id); let ok = false;
     for (let r = 0; r + h <= ROWS && !ok; r++) for (let c = 0; c + w <= COLS && !ok; c++) {
       let free = true; for (let y = r; y < r + h && free; y++) for (let x = c; x < c + w; x++) if (g[y][x]) { free = false; break; }
       if (free) { for (let y = r; y < r + h; y++) for (let x = c; x < c + w; x++) g[y][x] = 1; used = Math.max(used, r + h); ok = true; }
@@ -401,10 +742,10 @@ function rowsUsed(ids) {
   }
   return used;
 }
-function fits(ids) {
+function fits(ids, over) {
   const g = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
   for (const id of ids) {
-    const [w, h] = SPAN[tsize(id)]; let ok = false;
+    const [w, h] = spanOf(id, over); let ok = false;
     for (let r = 0; r + h <= ROWS && !ok; r++) for (let c = 0; c + w <= COLS && !ok; c++) {
       let free = true; for (let y = r; y < r + h && free; y++) for (let x = c; x < c + w; x++) if (g[y][x]) { free = false; break; }
       if (free) { for (let y = r; y < r + h; y++) for (let x = c; x < c + w; x++) g[y][x] = 1; ok = true; }
@@ -423,9 +764,9 @@ function layout() {
   }
   st.hidden = [...new Set((st.hidden || []).filter(id => TILES[id]))];
   const seen = new Set();
-  st.pages = st.pages.map(p => p.map(id => id === 'phone' ? 'launch' : id).filter(id => TILES[id] && !st.hidden.includes(id) && !seen.has(id) && seen.add(id)));
+  st.pages = st.pages.map(p => p.map(id => id === 'phone' ? 'launch' : id).filter(id => TILES[id] && !st.hidden.includes(id) && !pinnedOut(id) && !seen.has(id) && seen.add(id)));
   for (const id of Object.keys(TILES)) {
-    if (seen.has(id) || st.hidden.includes(id)) continue;
+    if (seen.has(id) || st.hidden.includes(id) || pinnedOut(id)) continue;
     const p = st.pages.find(p => fits([...p, id])); if (p) p.push(id); else st.pages.push([id]);
   }
   // Anything that no longer fits (e.g. after a size change) spills onto the next page.
@@ -440,8 +781,15 @@ function moveTile(id, to, before) {
   while (pages.length <= to) pages.push([]);
   const tgt = pages[to], i = before ? tgt.indexOf(before) : -1;
   if (i >= 0) tgt.splice(i, 0, id); else tgt.push(id);
-  if (!fits(tgt)) { toast('O sayfada yer yok'); return false; }
-  st.pages = pages; st.hidden = st.hidden.filter(x => x !== id); save('settings'); return true;
+  // a full page makes room: its last other tiles move to the top of the next page
+  let moved = 0;
+  while (!fits(tgt)) {
+    const other = [...tgt].reverse().find(x => x !== id); if (!other) break;
+    tgt.splice(tgt.indexOf(other), 1); if (!pages[to + 1]) pages.splice(to + 1, 0, []); pages[to + 1].unshift(other); moved++;
+  }
+  st.pages = pages; st.hidden = st.hidden.filter(x => x !== id); layout(); save('settings');
+  if (moved) toast(moved + ' kutu sonraki sayfaya geçti');
+  return true;
 }
 function hideTile(id) { const st = S.settings; st.pages = st.pages.map(p => p.filter(x => x !== id)); st.hidden = [...st.hidden.filter(x => x !== id), id]; save('settings'); }
 function calTileSub() {
@@ -455,8 +803,9 @@ function drawTile(el, id, sz) {
   if (T.live) return T.live(el, sz);
   if (T.draw && sz !== 'small' && !(sz === 'wide' && T.s === 'small')) return T.draw(el, sz);
   if (sz === 'small') {
-    el.title = T.name; el.innerHTML = ic(T.icon, 20);
+    el.title = T.name; el.dataset.name = T.name; el.innerHTML = ic(T.icon, 20);   // name shows under the icon on hover
     if (id === 'coffee') { el.classList.toggle('on', !!S.settings.awake); el.title = 'Kahve: ' + (S.settings.awake ? 'uyanık tutuyor' : 'kapalı'); el.onclick = () => { toggleAwake(); el.classList.toggle('on', !!S.settings.awake); }; }
+    else if (id === 'dnd') { el.classList.add('t-dnd'); paintDndTile(el); el.onclick = () => dndTileClick(el); }
     else if (id === 'calendar') { const d = new Date(); el.classList.add('t-day'); el.innerHTML = `<small>${d.toLocaleDateString('tr-TR', { weekday: 'short' })}</small><b>${d.getDate()}</b>`; el.onclick = () => go('calendar'); }
     else el.onclick = T.act || (() => go(id));
     return;
@@ -488,24 +837,31 @@ function vGrid(root) {
   ui.page = clamp(ui.page, 0, pages.length - 1);
   // Shrink the panel when tiles were removed: 72px per unused row (64px tile + 8px gap).
   const rows = ui.edit ? ROWS : Math.max(1, ...pages.map(rowsUsed));
-  SIZES.grid = [700, ui.edit ? 312 : 262 - (ROWS - rows) * 72];
-  root.innerHTML = `<div class="pager"><div class="pages"></div></div>
+  const wx = st.weather !== false, mp = st.mediaPin !== false, shown = ui.edit ? ROWS : rows, PH = shown * 72 - 8;
+  // edit mode: every page in one scrolling board (two visible at a time), so tiles can be dragged straight onto another page
+  const BOARD_H = 2 * (PH + 30) + 6;
+  SIZES.grid = [Math.round(32 + (wx ? WXW : 0) + PAGER_W + 30 + (mp ? MEDIA_W + 8 : 0)), ui.edit ? BOARD_H + 118 : 262 - 26 - (ROWS - rows) * 72];   // (no footer row: the pencil sits under the page dots)
+  root.innerHTML = `<div class="gwrap" style="--ph:${PH}px">${wx ? `<button class="wxc ${shown < 2 ? 'row' : ''}" id="wxc" title="Hava durumu"></button>` : ''}<div class="pager ${ui.edit ? 'board' : ''}" style="width:${PAGER_W}px${ui.edit ? ';height:' + BOARD_H + 'px' : ''}"><div class="pages"></div></div><div class="vcol"${ui.edit ? ' hidden' : ''}><div class="dots vert"></div><button class="icon gedit" id="gedit" title="Kutuları düzenle">${ic('pencil', 13)}</button></div>${mp ? `<div class="tile s-${shown >= 2 ? 'big' : 'wide'} mpin" id="mpin"></div>` : ''}</div>
     ${ui.edit ? `<div class="tray"><span class="lb">Kaldırılanlar</span><div class="hchips">${st.hidden.map(id => `<button class="hchip" draggable="true" data-id="${id}" title="Bu sayfaya ekle">${ic(TILES[id].icon, 14)}<span>${TILES[id].name}</span>${ic('plus', 12)}</button>`).join('') || '<span class="empty">Kaldırmak için kutudaki − işaretine dokun. Burada görünür.</span>'}</div></div>` : ''}
-    <div class="foot"><button class="${ui.edit ? 'btn done' : 'icon'}" id="edit" title="${ui.edit ? 'Düzenlemeyi bitir' : 'Kutuları düzenle'}">${ui.edit ? 'Bitti' : ic('pencil', 13)}</button><div class="dots ${ui.edit ? 'edit' : ''}"></div></div>`;
-  const pg = $('.pages', root); pg.style.transform = `translateX(-${ui.page * 100}%)`;
+    ${ui.edit ? '<div class="foot"><button class="btn done" id="edit" title="Düzenlemeyi bitir">Bitti</button><span class="fhint">Kutuyu başka sayfaya sürükle · kenarından çekerek boyutlandır</span></div>' : ''}`;
+  const pg = $('.pages', root); if (!ui.edit) pg.style.transform = `translateY(-${ui.page * (PH + 8)}px)`;
+  if (mp) { const m = $('#mpin', root); drawTile(m, 'media', shown >= 2 ? 'big' : 'wide'); }
+  if (wx) { $('#wxc', root).onclick = () => go('weather'); paintWxCard(); const upd = () => api.invoke('weather:get').then(d => { if (d) { WX = d; paintWxCard(); } }); upd(); every(upd, 10 * 60e3); }
   let dragId = null;
-  const onDrop = (e, page, before) => { e.preventDefault(); e.stopPropagation(); $$('.drop', root).forEach(x => x.classList.remove('drop')); const id = e.dataTransfer.getData('text/plain'); if (!id || id === before) return; if (moveTile(id, page, before)) go('grid'); };
+  const onDrop = (e, page, before) => { e.preventDefault(); e.stopPropagation(); $$('.drop', root).forEach(x => x.classList.remove('drop')); const id = e.dataTransfer.getData('text/plain'); if (!id || id === before) return; flipTiles(() => { if (moveTile(id, page, before)) regrid(); }); };
   pages.forEach((ids, pi) => {
     const p = document.createElement('div'); p.className = 'page' + (ui.edit ? ' edit' : '');
     ids.forEach(id => {
       const T = TILES[id], el = document.createElement('div'), sz = tsize(id);
-      el.className = 'tile s-' + sz; el.dataset.id = id;
+      const [sw, sh] = spanOf(id);
+      el.className = 'tile s-' + sz; el.dataset.id = id; el.style.gridColumn = 'span ' + sw; el.style.gridRow = 'span ' + sh;
       drawTile(el, id, sz);
       if (ui.edit) {
         el.draggable = true; el.onclick = null;
         const rm = document.createElement('button'); rm.className = 'rm'; rm.title = T.name + ' kaldır'; rm.innerHTML = ic('minus', 11);
-        rm.onclick = e => { e.stopPropagation(); hideTile(id); go('grid'); }; el.appendChild(rm);
-        if (allowed(id).length > 1) { const rs = document.createElement('button'); rs.className = 'rs'; rs.title = 'Boyutu değiştir'; rs.innerHTML = ic('resize', 11); rs.onclick = e => { e.stopPropagation(); if (resizeTile(id)) go('grid'); }; el.appendChild(rs); }
+        rm.onclick = e => { e.stopPropagation(); flipTiles(() => { hideTile(id); regrid(); }); }; el.appendChild(rm);
+        // resize handles: right edge, bottom edge, corner
+        for (const ax of ['e', 's', 'se']) { const h = document.createElement('span'); h.className = 'rz rz-' + ax; h.title = 'Boyutlandırmak için sürükle'; h.onpointerdown = e => startResize(e, el, id, ids, ax); h.ondragstart = e => e.preventDefault(); el.appendChild(h); }
         el.ondragstart = e => { dragId = id; e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; setTimeout(() => el.classList.add('lifted'), 0); };
         el.ondragend = () => { dragId = null; el.classList.remove('lifted'); };
         el.ondragover = e => { e.preventDefault(); el.classList.add('drop'); };
@@ -519,31 +875,47 @@ function vGrid(root) {
       p.ondragover = e => { e.preventDefault(); p.classList.add('over'); }; p.ondragleave = e => { if (!p.contains(e.relatedTarget)) p.classList.remove('over'); };
       p.ondrop = e => { p.classList.remove('over'); onDrop(e, pi); };
     }
-    pg.appendChild(p);
+    if (ui.edit) {   // label above each page; the spare one at the end makes a new page
+      const box = document.createElement('div'); box.className = 'pgbox' + (ids.length ? '' : ' spare');
+      box.innerHTML = `<div class="pglbl">${ids.length ? `Sayfa ${pi + 1} <small>· ${ids.length} kutu</small>` : 'Yeni sayfa <small>· kutuyu buraya sürükle</small>'}</div>`;
+      box.appendChild(p); pg.appendChild(box);
+    } else pg.appendChild(p);
   });
   const pageEls = [...pg.children];
+  const board = ui.edit && $('.pager', root);
+  if (board) {
+    if (ui.keepScroll != null) { board.scrollTop = ui.keepScroll; ui.keepScroll = null; }
+    else requestAnimationFrame(() => { board.scrollTop = pageEls[ui.page] ? pageEls[ui.page].offsetTop - 4 : 0; });
+    board.onscroll = () => { ui.page = clamp(Math.round(board.scrollTop / (PH + 38)), 0, pages.length - 1); };
+    // dragging a tile near the top or bottom edge scrolls the board
+    let raf = 0, dir = 0;
+    const roll = () => { if (!dir) { raf = 0; return; } board.scrollTop += dir; raf = requestAnimationFrame(roll); };
+    board.addEventListener('dragover', e => { const r = board.getBoundingClientRect(), y = e.clientY - r.top; dir = y < 46 ? -Math.ceil((46 - y) / 4) : y > r.height - 46 ? Math.ceil((y - r.height + 46) / 4) : 0; if (dir && !raf) raf = requestAnimationFrame(roll); });
+    const stop = () => { dir = 0; }; board.addEventListener('dragleave', e => { if (!board.contains(e.relatedTarget)) stop(); }); board.addEventListener('drop', stop); document.addEventListener('dragend', stop, { once: true });
+  }
   const setPage = n => {
     ui.page = clamp(n, 0, pages.length - 1);
-    pg.style.transition = ''; pg.style.transform = `translateX(-${ui.page * 100}%)`;
+    if (board) { board.scrollTo({ top: pageEls[ui.page].offsetTop - 4, behavior: 'smooth' }); return; }
+    pg.style.transition = ''; pg.style.transform = `translateY(-${ui.page * (PH + 8)}px)`;
     pageEls.forEach((el, i) => el.classList.toggle('cur', i === ui.page));
     $$('.dots i', root).forEach((d, i) => d.classList.toggle('on', i === ui.page));
   };
   pageEls.forEach((el, i) => el.classList.toggle('cur', i === ui.page));
-  // Drag sideways with the mouse to change page (not while editing: there tiles are dragged).
+  // Drag up/down with the mouse to change page (not while editing: there tiles are dragged).
   const pager = $('.pager', root); let drag = null, swallowClick = false;
-  pager.addEventListener('pointerdown', e => { if (ui.edit || e.button !== 0 || pages.length < 2) return; drag = { x: e.clientX, t: performance.now(), dx: 0, on: false }; });
+  pager.addEventListener('pointerdown', e => { if (ui.edit || e.button !== 0 || pages.length < 2) return; drag = { x: e.clientY, t: performance.now(), dx: 0, on: false }; });
   pager.addEventListener('pointermove', e => {
-    if (!drag) return; const dx = e.clientX - drag.x;
+    if (!drag) return; const dx = e.clientY - drag.x;
     if (!drag.on && Math.abs(dx) > 8) { drag.on = true; pager.setPointerCapture(e.pointerId); pg.style.transition = 'none'; }
     if (!drag.on) return;
     const edge = (ui.page === 0 && dx > 0) || (ui.page === pages.length - 1 && dx < 0);
     drag.dx = edge ? dx * .3 : dx;
-    pg.style.transform = `translateX(calc(-${ui.page * 100}% + ${drag.dx}px))`;
+    pg.style.transform = `translateY(${-ui.page * (PH + 8) + drag.dx}px)`;
   });
   const endDrag = () => {
     if (!drag) return; const d = drag; drag = null; if (!d.on) return;
     swallowClick = true; setTimeout(() => swallowClick = false, 0);
-    const v = d.dx / Math.max(1, performance.now() - d.t), w = pager.clientWidth;
+    const v = d.dx / Math.max(1, performance.now() - d.t), w = pager.clientHeight;
     setPage(ui.page + (d.dx < -w * .18 || v < -.5 ? 1 : d.dx > w * .18 || v > .5 ? -1 : 0));
   };
   pager.addEventListener('pointerup', endDrag); pager.addEventListener('pointercancel', endDrag);
@@ -557,12 +929,14 @@ function vGrid(root) {
     d.ondrop = e => { clearTimeout(t); onDrop(e, i); };
   });
   $$('.hchip', root).forEach(c => {
-    c.onclick = () => { if (moveTile(c.dataset.id, ui.page)) go('grid'); };
+    c.onclick = () => flipTiles(() => { if (moveTile(c.dataset.id, ui.page)) regrid(); });
     c.ondragstart = e => e.dataTransfer.setData('text/plain', c.dataset.id);
   });
-  $('#edit').onclick = () => { ui.edit = !ui.edit; if (!ui.edit) { layout(); save('settings'); } go('grid'); };
-  // Mouse wheel flips one page per notch; trackpads accumulate horizontal scroll first.
-  let wt = 0, acc = 0; root.addEventListener('wheel', e => { if (Date.now() - wt < 450) return; const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY; acc += d; if (Math.abs(acc) < 40) return; wt = Date.now(); setPage(ui.page + (acc > 0 ? 1 : -1)); acc = 0; }, { passive: true });
+  $$('#edit, #gedit', root).forEach(b => b.onclick = () => { ui.edit = !ui.edit; if (!ui.edit) { layout(); save('settings'); } go('grid'); });
+  gridSetPage = ui.edit ? null : setPage;   // arrow keys / Page Up-Down
+  // Mouse wheel / trackpad: scroll down for the next page (not over the media card: there it changes the volume).
+  // (on the grid's own element: #view stays the same across renders, so listeners added there piled up and one notch skipped pages)
+  let wt = 0, acc = 0; $('.gwrap', root).addEventListener('wheel', e => { if (ui.edit || e.target.closest('.mpin') || Date.now() - wt < 450) return; const d = e.deltaY || e.deltaX; acc += d; if (Math.abs(acc) < 40) return; wt = Date.now(); setPage(ui.page + (acc > 0 ? 1 : -1)); acc = 0; }, { passive: true });
   every(tileTick, 250); tileTick();
   every(pollGauges, 1500); pollGauges();
 }
@@ -849,14 +1223,26 @@ function vMedia(root) {
   paintVol(); let lastVol = '';
   $('.mctl', root).onclick = e => { const a = e.target.closest('button')?.dataset.a; if (a === 'pp') mtoggle(); else if (a) mskip(a === 'next' ? 1 : -1); };
   $('.tr', root).onclick = e => { if (M.dur <= 0) return; const r = e.currentTarget.getBoundingClientRect(); mseek(clamp((e.clientX - r.left) / r.width, 0, 1) * M.dur); };
-  const lyr = $('.lyr', root), inner = $('.in', root), lines = $$('.ln', root); let cur = -2, lastPlay = null;
+  const lyr = $('.lyr', root), inner = M.lyrPlain ? null : $('.in', root), lines = $$('.ln', root); let cur = -2, lastPlay = null;
+  // Synced lyrics can be scrolled with the wheel; following the song resumes 3 s after the last scroll.
+  // A click on a line jumps the song there. (Plain lyrics scroll natively.)
+  let ty = 0, freeUntil = 0;
+  const setTy = (v, free) => { const h = lyr.clientHeight; ty = clamp(v, h * .42 - inner.scrollHeight, h * .42); inner.classList.toggle('free', !!free); inner.style.transform = `translateY(${ty}px)`; };
+  if (inner) {
+    lyr.addEventListener('wheel', e => { e.preventDefault(); e.stopPropagation(); freeUntil = performance.now() + 3000; lyr.classList.add('free'); setTy(ty - (e.deltaMode === 1 ? e.deltaY * 32 : e.deltaY), true); }, { passive: false });
+    lines.forEach((l, i) => l.onclick = () => { if (M.lyr[i][0] < 0) return; mseek(M.lyr[i][0]); freeUntil = 0; cur = -2; });
+    // the panel widens while it opens, and lines wrap differently: re-centre the sung line when the size settles
+    new ResizeObserver(() => { if (freeUntil <= performance.now()) cur = -2; }).observe(lyr);
+  }
   const frame = () => {
     if (ui.view !== 'media' || !$('.mv3', root)) return;
     const vk = V.vol + '|' + V.muted; if (vk !== lastVol && document.activeElement !== vr) { lastVol = vk; paintVol(); }
     const p = mpos(), k = lyricIdx(p);
     if (lastPlay !== M.playing) { lastPlay = M.playing; $('.mv3', root).classList.toggle('playing', M.playing); $('.pp', root).innerHTML = ic(M.playing ? 'pause' : 'play', 18); }
     $('.prog i', root).style.width = (M.dur > 0 ? p / M.dur * 100 : 0) + '%'; $('.a', root).textContent = fmt(p); $('.b', root).textContent = M.dur > 0 ? '-' + fmt(M.dur - p) : '';
-    if (inner && k !== cur) { cur = k; lines.forEach((l, i) => { l.classList.toggle('act', i === k); l.classList.toggle('past', i < k); if (i !== k) l.style.removeProperty('--p'); }); const l = lines[k]; inner.style.transform = `translateY(${lyr.clientHeight * .42 - (l ? l.offsetTop + l.offsetHeight / 2 : 0)}px)`; }
+    const free = freeUntil > performance.now();
+    if (inner && !free && lyr.classList.contains('free')) { lyr.classList.remove('free'); cur = -2; }   // scrolling ended: glide back to the line being sung
+    if (inner && k !== cur) { cur = k; lines.forEach((l, i) => { l.classList.toggle('act', i === k); l.classList.toggle('past', i < k); if (i !== k) l.style.removeProperty('--p'); }); const l = lines[k]; if (!free) setTy(lyr.clientHeight * .42 - (l ? l.offsetTop + l.offsetHeight / 2 : 0)); }
     if (inner && k >= 0) { const s = M.lyr[k][0], e = M.lyr[k + 1] ? M.lyr[k + 1][0] : s + 6; lines[k].style.setProperty('--p', clamp((p - s) / Math.max(.5, e - s), 0, 1) * 100 + '%'); }
     lyrRaf = requestAnimationFrame(frame);
   };
@@ -903,7 +1289,7 @@ function drawClips(root = view) {
     };
   });
 }
-api.on('clips', c => { clips = c; if (ui.view === 'clipboard') drawClips(); else if (ui.view === 'grid') { const t = $('[data-id=clipboard]'); if (t && !t.classList.contains('s-small')) { const keep = [...t.querySelectorAll('.rm,.rs')]; tClip(t); keep.forEach(k => t.appendChild(k)); } } });
+api.on('clips', c => { clips = c; if (ui.view === 'clipboard') drawClips(); else if (ui.view === 'grid') { const t = $('[data-id=clipboard]'); if (t && !t.classList.contains('s-small')) { const keep = [...t.querySelectorAll('.rm,.rz')]; tClip(t); keep.forEach(k => t.appendChild(k)); } } });
 
 /* ---------- coffee / notes ---------- */
 function toggleAwake() { S.settings.awake = !S.settings.awake; save('settings'); api.send('awake', S.settings.awake); }
@@ -913,6 +1299,21 @@ function tCoffee(el) {
   paint();
   el.onclick = () => { toggleAwake(); $('.sw', el).classList.toggle('on', S.settings.awake); $('small', el).textContent = S.settings.awake ? 'Uyanık tutuyor' : 'Kapalı'; };
 }
+// Do Not Disturb as a tile: the switch is the app's own; when Windows' DND is what keeps it quiet, the tile
+// says so (and the switch can't turn Windows' off; that stays in Windows / "follow Windows" in Settings)
+// (the whole tile is the switch: purple while it's on; the state line says which)
+function dndState() { return S.settings.dnd ? 'Açık' : dndOn() ? 'Windows’ta açık' : 'Kapalı'; }
+function paintDndTile(el) {
+  const on = dndOn(), small = el.classList.contains('s-small');
+  el.classList.toggle('on', on);
+  el.title = 'Rahatsız etme: ' + dndState().toLocaleLowerCase('tr-TR') + (on ? ' · bildirimler adada gösterilmez' : '');
+  if (!small) el.innerHTML = `${ic('moon', 22)}<div class="col"><b>Rahatsız etme</b><small>${dndState()}</small></div>`;
+}
+function dndTileClick(el) {
+  if (!S.settings.dnd && dndOn()) return toast('Windows’ta rahatsız etme açık · Ayarlar’dan izlemeyi kapatabilirsin');
+  setDnd(!S.settings.dnd);
+}
+function tDnd(el) { el.classList.add('t-row', 't-dnd'); paintDndTile(el); el.onclick = () => dndTileClick(el); }
 function tNotes(el) {
   el.classList.add('t-notes'); const first = (S.notes[0]?.text || '').split('\n').find(l => l.trim()) || '';
   el.innerHTML = `<div class="th">${ic('note', 16)}Notlar</div><div class="first ${first ? 'has' : ''}">${esc(first || 'Bir şeyler yaz')}</div>`; el.onclick = () => go('notes');
@@ -930,7 +1331,13 @@ function vNotes(root) {
   noteSel = clamp(noteSel, 0, S.notes.length - 1);
   $('#barActions').innerHTML = `<button class="icon" id="nn" title="Yeni not">${ic('plus', 16)}</button><button class="icon" id="nd" title="Notu sil">${ic('trash', 16)}</button>`;
   $('#nn').onclick = () => { S.notes.unshift({ id: Date.now(), text: '' }); noteSel = 0; save('notes'); draw(); $('textarea', root).focus(); };
-  $('#nd').onclick = () => { S.notes.splice(noteSel, 1); if (!S.notes.length) S.notes.push({ id: Date.now(), text: '' }); noteSel = 0; save('notes'); draw(); };
+  // a note with text is deleted on the second press (within 3 s): one stray click can't lose it
+  const nd = $('#nd'); let armed = 0;
+  nd.onclick = () => {
+    if ((S.notes[noteSel].text || '').trim() && Date.now() > armed) { armed = Date.now() + 3000; nd.classList.add('arm'); nd.title = 'Silmek için tekrar bas'; toast('Notu silmek için tekrar bas'); setTimeout(() => { if (Date.now() > armed) { nd.classList.remove('arm'); nd.title = 'Notu sil'; } }, 3050); return; }
+    armed = 0; nd.classList.remove('arm'); nd.title = 'Notu sil';
+    S.notes.splice(noteSel, 1); if (!S.notes.length) S.notes.push({ id: Date.now(), text: '' }); noteSel = 0; save('notes'); draw();
+  };
   draw();
 }
 
@@ -1023,7 +1430,11 @@ let calM = new Date(); calM.setDate(1); let calSel = new Date();
 const key = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 function isoWeek(d) { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - n); return Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7); }
 function vCal(root) {
+  let drawn = false;
   const draw = () => {
+    // only the first draw plays the page's entrance; redraws (month change, day click) must not
+    // make the whole calendar vanish and fade back in
+    if (drawn) view.classList.remove('enter'); drawn = true;
     $('#barActions').innerHTML = `<span class="ver" id="csync">${CAL.syncing ? 'Eşitleniyor…' : CAL.last ? hm(CAL.last) + ' eşitlendi' : ''}</span><button class="icon ${CAL.syncing ? 'spin' : ''}" id="crefresh" title="Şimdi eşitle">${ic('refresh', 15)}</button><button class="icon" id="clink" title="Bağlı takvimler">${ic('link', 16)}</button>`;
     $('#crefresh').onclick = () => calSync(); $('#clink').onclick = () => go('calsrc');
     const start = new Date(calM); start.setDate(1 - ((calM.getDay() + 6) % 7));
@@ -1047,18 +1458,47 @@ function vCal(root) {
     Object.keys(S.events).sort().forEach(k => { if (k > sk) S.events[k].forEach(e => up.push({ t: new Date(k + 'T' + (/^\d\d:\d\d$/.test(e.t) ? e.t : '00:00')).getTime(), day: k, label: e.t + ' ' + e.text, color: 'var(--accent)' })); });
     CAL.events.filter(e => e.start >= dayEnd).slice(0, 8).forEach(e => up.push({ t: e.start, day: key(new Date(e.start)), label: (e.allDay ? '' : hm(e.start) + ' ') + e.title, color: srcColor(e.src) }));
     up.sort((a, b) => a.t - b.t);
-    root.innerHTML = `<div class="cal"><div class="month"><div class="mh">${calM.toLocaleDateString('tr-TR', { month: 'long' })} <small>${calM.getFullYear()}</small><span class="sp"></span><button class="icon" id="pm" title="Önceki ay">${ic('lt', 14)}</button><button class="icon" id="nm" title="Sonraki ay">${ic('gt', 14)}</button></div>
+    root.innerHTML = `<div class="cal"><div class="month"><div class="mh"><span class="mtt">${calM.toLocaleDateString('tr-TR', { month: 'long' })} <small>${calM.getFullYear()}</small></span><span class="sp"></span><button class="icon" id="pm" title="Önceki ay">${ic('lt', 14)}</button><button class="icon" id="nm" title="Sonraki ay">${ic('gt', 14)}</button></div>
       <div class="cg"><div></div>${['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'].map((x, i) => `<div class="hd ${i > 4 ? 'we' : ''}">${x}</div>`).join('')}${cells}</div></div>
       <div class="side"><div class="wd">${calSel.toLocaleDateString('tr-TR', { weekday: 'long' })}</div><div class="big">${calSel.getDate()} ${calSel.toLocaleDateString('tr-TR', { month: 'long' })}</div><div class="sub">${key(calSel) === today ? 'Bugün · ' : ''}${isoWeek(calSel)}. hafta</div>
-      <div class="evl">${evs.map(e => `<div class="e" title="${esc(e.from)}"><time>${e.time}</time><i class="cdot" style="background:${e.color}"></i><span>${esc(e.title)}${e.loc ? `<small> · ${esc(e.loc)}</small>` : ''}</span>${e.local ? `<span class="x" data-id="${e.id}" title="Kaldır">${ic('x', 12)}</span>` : ''}</div>`).join('') || '<div class="empty">Plan yok</div>'}
+      <div class="evl">${evs.map(e => `<div class="e" title="${esc(e.from)}"><time>${esc(e.time)}</time><i class="cdot" style="background:${e.color}"></i><span>${esc(e.title)}${e.loc ? `<small> · ${esc(e.loc)}</small>` : ''}</span>${e.local ? `<span class="x" data-id="${e.id}" title="Kaldır">${ic('x', 12)}</span>` : ''}</div>`).join('') || '<div class="empty">Plan yok</div>'}
       ${up.length ? '<div class="lb" style="margin-top:10px">Yaklaşanlar</div>' + up.slice(0, 4).map(u => `<div class="e"><time>${new Date(u.day + 'T00:00').toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric', month: 'short' })}</time><i class="cdot" style="background:${u.color}"></i><span>${esc(u.label)}</span></div>`).join('') : ''}</div>
       <div class="add"><input class="field" id="evin" placeholder="Ekle: 14:30 Dişçi"><button class="round" id="evgo" title="Etkinlik ekle">${ic('plus', 16)}</button></div></div></div>`;
-    $('#pm').onclick = () => { calM.setMonth(calM.getMonth() - 1); draw(); }; $('#nm').onclick = () => { calM.setMonth(calM.getMonth() + 1); draw(); };
-    $$('.d', root).forEach(d => d.onclick = () => { calSel = new Date(d.dataset.k + 'T00:00'); if (calSel.getMonth() !== calM.getMonth()) { calM = new Date(calSel); calM.setDate(1); } draw(); });
+    $('#pm').onclick = () => slideMonth(-1); $('#nm').onclick = () => slideMonth(1);
+    $$('.d', root).forEach(d => d.onclick = () => {
+      calSel = new Date(d.dataset.k + 'T00:00');
+      if (calSel.getMonth() !== calM.getMonth()) slideMonth(calSel > calM ? 1 : -1, () => { calM = new Date(calSel); calM.setDate(1); });   // a day of the next/previous month
+      else draw();
+    });
+    // wheel over the month flips months (one per notch)
+    $('.month', root).onwheel = e => { e.preventDefault(); if (Date.now() - (draw.wt || 0) < 380) return; draw.wt = Date.now(); slideMonth(e.deltaY > 0 ? 1 : -1); };
     $$('.x', root).forEach(x => x.onclick = () => { const k = key(calSel); S.events[k] = S.events[k].filter(e => String(e.id) !== x.dataset.id); if (!S.events[k].length) delete S.events[k]; save('events'); draw(); });
     const add = () => { const v = $('#evin').value.trim(); if (!v) return; const m = v.match(/^(\d{1,2})[:.](\d{2})\s+(.+)$/); const t = m ? String(m[1]).padStart(2, '0') + ':' + m[2] : 'Tüm gün', text = m ? m[3] : v; const k = key(calSel); (S.events[k] = S.events[k] || []).push({ id: Date.now(), t, text }); save('events'); draw(); };
     $('#evgo').onclick = add; $('#evin').onkeydown = e => { if (e.key === 'Enter') add(); }; $('#evin').onfocus = () => api.send('focus', true);
   };
+  // The old month slides out one way while the new one slides in from the other side.
+  // Month change: the weekday row and the arrows stay put; the old dates slide out quickly, the new
+  // ones follow a beat later from the other side (so the two months barely overlap), and the
+  // month name cross-fades in place.
+  function slideMonth(dir, set) {
+    const old = $('.cg', root), oldT = $('.mtt', root), ghost = old && old.cloneNode(true), ghostT = oldT && oldT.cloneNode(true);
+    const at = old && [old.offsetTop, old.offsetLeft, old.offsetWidth], atT = oldT && [oldT.offsetTop, oldT.offsetLeft];
+    if (set) set(); else calM.setMonth(calM.getMonth() + dir);
+    draw();
+    const cg = $('.cg', root), tt = $('.mtt', root), month = $('.month', root); if (!ghost || !cg) return;
+    const D = 28, OUT = 'cubic-bezier(.4, 0, 1, 1)', IN = 'cubic-bezier(.2, .9, .25, 1)';
+    ghost.classList.add('cal-ghost'); Object.assign(ghost.style, { top: at[0] + 'px', left: at[1] + 'px', width: at[2] + 'px' });
+    [...ghost.children].forEach(c => { if (!c.classList.contains('d') && !c.classList.contains('wk')) c.style.visibility = 'hidden'; });   // weekday row stays from the new grid
+    month.appendChild(ghost);
+    ghost.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${-dir * D}px)`, opacity: 0 }], { duration: 160, easing: OUT, fill: 'forwards' }).onfinish = () => ghost.remove();
+    $$('.d, .wk', cg).forEach(c => c.animate([{ transform: `translateX(${dir * D}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 340, delay: 150, easing: IN, fill: 'backwards' }));
+    if (ghostT && tt) {
+      ghostT.classList.add('cal-ghost'); Object.assign(ghostT.style, { top: atT[0] + 'px', left: atT[1] + 'px' });
+      month.appendChild(ghostT);
+      ghostT.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, easing: OUT, fill: 'forwards' }).onfinish = () => ghostT.remove();
+      tt.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 150, easing: IN, fill: 'backwards' });
+    }
+  }
   calRedraw = draw; draw();
 }
 // ---- connected calendars ----
@@ -1181,7 +1621,8 @@ function calcEval(src, deg, ans) {
   const rad = x => deg ? x * Math.PI / 180 : x, unrad = x => deg ? x * 180 / Math.PI : x;
   const FN = { sin: x => Math.sin(rad(x)), cos: x => Math.cos(rad(x)), tan: x => Math.tan(rad(x)), asin: x => unrad(Math.asin(x)), acos: x => unrad(Math.acos(x)), atan: x => unrad(Math.atan(x)), ln: Math.log, log: Math.log10, sqrt: Math.sqrt, '√': Math.sqrt, abs: Math.abs, round: Math.round, floor: Math.floor, ceil: Math.ceil };
   const CONST = { pi: Math.PI, 'π': Math.PI, e: Math.E, ans: ans || 0 };
-  const fact = n => { if (n < 0 || n % 1) throw new Error('fact'); let r = 1; for (let k = 2; k <= n; k++) r *= k; return r; };
+  // 171! is already Infinity; without the cap "99999999999!" would loop for minutes on every keystroke
+  const fact = n => { if (n < 0 || n % 1) throw new Error('fact'); if (n > 170) return Infinity; let r = 1; for (let k = 2; k <= n; k++) r *= k; return r; };
   const startsPrimary = t => t && (t.t === 'n' || t.t === 'id' || t.t === '(');
   function expr() { let v = term(); for (;;) { if (eat('+')) v += term(); else if (eat('-')) v -= term(); else return v; } }
   function term() { let v = unary(); for (;;) { if (eat('*')) v *= unary(); else if (eat('/')) v /= unary(); else if (startsPrimary(peek())) v *= unary(); else return v; } }
@@ -1254,7 +1695,9 @@ function vLaunch(root) {
   root.innerHTML = `<div class="ql"><div class="qgrid"></div><div class="qhint">Eklemek için dosya veya klasörleri buraya bırak</div>
     <div class="qadd"><input class="field" id="qin" placeholder="Bir yol, web sitesi veya ms-settings: bağlantısı yapıştır"><button class="btn" id="qb">${ic('folder', 15)}Gözat</button><button class="btn pri" id="qa">${ic('plus', 15)}Ekle</button></div></div>`;
   const ql = $('.ql', root), grid = $('.qgrid', root), qin = $('#qin', root);
-  const draw = () => {
+  // the page is as tall as its shortcuts need (1–3 rows), not a fixed, mostly empty box
+  const fit = () => { const rows = clamp(Math.ceil((S.launch.length + 0) / 6), 1, 3), h = rows * 92 + 84; ql.style.height = h + 'px'; SIZES.launch = [700, 66 + h]; if (ui.view === 'launch') sizeShell(...SIZES.launch); };
+  const draw = () => { fit();
     grid.innerHTML = S.launch.map((it, i) => `<button class="qi" data-i="${i}" title="${esc(it.target)}"><span class="rm" data-rm="${i}">${ic('x', 10)}</span><span class="gi">${ic(/^https?:/i.test(it.target) ? 'globe' : 'rocket', 18)}</span><span>${esc(it.name)}</span></button>`).join('') || '<div class="empty" style="grid-column:1/-1;padding:20px 4px">Kısayol yok. Aşağıdan ekle.</div>';
     $$('.qi', grid).forEach(b => {
       const it = S.launch[+b.dataset.i], src = it.icon || it.target;
@@ -1550,8 +1993,9 @@ api.on('phone:state', st => {
   const had = new Set(((PH && PH.devices) || []).map(d => d.id)), fresh = PH ? st.devices.find(d => !had.has(d.id)) : null;
   PH = st;
   if (fresh) { phSel = fresh.id; phView = ''; if (ui.view === 'phone') toast(fresh.name + ' bağlandı'); }
-  if (ui.view === 'phone') paintPhone();
+  if (ui.view === 'phone' && !phRenaming) paintPhone();   // not while a name is being typed (it repaints when done)
 });
+let phRenaming = false;
 api.on('phone:incoming', d => {
   const text = d.type === 'file' ? d.name + ' alındı · ' + bytes(d.size) : d.text;
   if (ui.open && ui.view === 'phone') return;
@@ -1559,8 +2003,14 @@ api.on('phone:incoming', d => {
 });
 const phAgo = t => { if (!t) return ''; const s = (Date.now() - t) / 1000; return s < 60 ? 'az önce' : s < 3600 ? Math.floor(s / 60) + ' dk önce' : s < 86400 ? Math.floor(s / 3600) + ' sa önce' : new Date(t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }); };
 let phView = '';   // '' = automatic, 'qr' = show the pairing code
+// what a send (picked or dropped files / folders) did: "5 dosya telefona hazır · 1 alt klasör atlandı"
+function phSent(r) {
+  if (!r || (!r.n && !r.skipped)) return;
+  if (!r.n) return toast('Gönderilecek dosya yok · alt klasörler gönderilmez');
+  toast((r.n === 1 ? 'Dosya' : r.n + ' dosya') + ' telefona hazır' + (r.skipped ? ' · ' + r.skipped + ' öğe atlandı' : ''));
+}
 function vPhone(root) {
-  root.innerHTML = '<div class="phv"></div>';
+  root.innerHTML = '<div class="phv"></div>'; phRenaming = false;   // a rename left open when the island closed
   api.invoke('phone:state').then(st => { PH = st; paintPhone(); });
   every(() => { const d = phDev(); if (d && !d.online) { const el = $('.pstat span'); if (el) el.textContent = 'Uzakta · ' + phAgo(d.lastSeen); } }, 30000);
 }
@@ -1581,7 +2031,7 @@ function paintPhone() {
   if (!st.paired || phView === 'qr') {   // ---- pairing QR ----
     box.innerHTML = `<div class="pqr"><div class="qcard">${qrSvg({ style: 'square', corners: 'square', color: '#111111', bg: 'white', label: '', text: st.url, logo: null })}</div>
       <b>Telefonunun kamerasıyla okut</b><p>iPhone: Kamera uygulamasını aç. Android: Kamera ya da Google Lens. Çıkan bağlantıya dokun, telefon kendiliğinden bağlanır.</p>
-      <small>Telefon aynı Wi-Fi ağında olmalı · ${esc(st.url.split('?')[0])} · Windows güvenlik duvarı sorarsa yalnızca “Özel ağlar”a izin ver</small>
+      <small>🔒 Uçtan uca şifreli · Bu QR kod tek kullanımlık, her telefon için yenisi çıkar<br>Telefon aynı Wi-Fi ağında olmalı · ${esc(st.url.split('#')[0])} · Windows güvenlik duvarı sorarsa yalnızca “Özel ağlar”a izin ver</small>
       <div class="pqbtns"><button class="btn" id="pcancel">${st.paired ? 'Geri' : 'İptal'}</button><button class="btn" id="pcopy">${ic('link', 14)}Bağlantıyı kopyala</button></div></div>`;
     $('#pcancel').onclick = () => { if (st.paired) { phView = ''; paintPhone(); } else api.send('phone:stop'); };
     $('#pcopy').onclick = () => { api.send('clips:write', st.url); toast('Bağlantı kopyalandı'); };
@@ -1600,28 +2050,106 @@ function paintPhone() {
   const chips = st.devices.length > 1 ? `<div class="pdevs">${st.devices.map(d => `<button class="pchip ${d.id === dv.id ? 'sel' : ''}" data-dev="${d.id}"><i class="${d.online ? 'on' : ''}"></i>${esc(d.name)}</button>`).join('')}</div>` : '';
   box.innerHTML = `<div class="pcon">
     <div class="pside">${chips}<div class="pdev"><span class="pnotch"></span>${ic(dv.kind === 'iphone' ? 'apple' : 'android', 28)}</div>
-      <b class="pname">${esc(dv.name)}</b><div class="pstat ${dv.online ? 'on' : ''}"><i></i><span>${dv.online ? 'Bağlı' : 'Uzakta · ' + phAgo(dv.lastSeen)}</span></div>
+      <button class="pname" id="pname" title="Adını değiştir"><b>${esc(dv.name)}</b>${ic('pencil', 12)}</button><div class="pstat ${dv.online ? 'on' : ''}"><i></i><span>${dv.online ? 'Bağlı · şifreli' : dv.legacy ? 'QR kodu yeniden okutmalı' : 'Uzakta · ' + phAgo(dv.lastSeen)}</span></div>
       <p>Telefonda Adacık sayfasını aç (ya da ana ekrana eklediğin simgeyi). Kendiliğinden yeniden bağlanır.</p>
       <div class="pside-btns"><button class="btn" id="pshowqr">${ic('qr', 14)}Telefon ekle</button><button class="btn warn" id="punpair">Bu telefonu kaldır</button></div></div>
-    <div class="pmain"><div class="pdrop" id="pdrop"><span class="pup">${ic('upload', 20)}</span><div class="col"><b>Dosyaları buraya bırak</b><small>${esc(dv.name)} üzerindeki Adacık sayfasından indirilebilir</small></div>
+    <div class="pmain">${st.merge ? `<div class="pmerge">${ic('phone', 16)}<div class="col"><b>Bu, daha önce bağlanan “${esc(st.merge.oldName)}” mi?</b><small>Aynı telefonsa eski mesajlar ve dosyalar bu bağlantıya taşınır.</small></div><button class="btn pri" id="pmyes">Evet, aynı</button><button class="btn" id="pmno">Hayır</button></div>` : ''}<div class="pdrop" id="pdrop"><span class="pup">${ic('upload', 20)}</span><div class="col"><b>Dosyaları buraya bırak</b><small>${esc(dv.name)} üzerindeki Adacık sayfasından indirilebilir</small></div>
         <button class="btn" id="ppick">${ic('doc', 14)}Dosya seç</button><button class="btn" id="pclip">${ic('clip', 14)}Panoyu gönder</button></div>
       <div class="pmsgrow"><input class="field" id="pmsg" placeholder="${esc(dv.name)} cihazına mesaj veya bağlantı yaz"><button class="btn pri" id="psend">${ic('send', 14)}Gönder</button></div>
       <div class="plist">${items || '<div class="pempty">Dosyalar ve mesajlar burada görünür. Telefondan gelen dosyalar İndirilenler\\Adacık klasörüne kaydedilir.</div>'}</div></div></div>`;
   $$('[data-dev]', box).forEach(b => b.onclick = () => { phSel = b.dataset.dev; paintPhone(); });
+  if (st.merge) { $('#pmyes').onclick = () => { phSel = st.merge.nu; api.send('phone:merge', true); toast('Geçmiş taşındı'); }; $('#pmno').onclick = () => api.send('phone:merge', false); }
   const send = async () => { const i = $('#pmsg'); if (await api.invoke('phone:sendText', i.value, dv.id)) { i.value = ''; toast(dv.name + ' cihazına gönderildi'); } };
   $('#psend').onclick = send; $('#pmsg').onkeydown = e => { if (e.key === 'Enter') send(); }; $('#pmsg').onfocus = () => api.send('focus', true);
-  $('#ppick').onclick = async () => { const n = await api.invoke('phone:browse', dv.id); if (n) toast(n + ' dosya telefona hazır'); };
+  $('#ppick').onclick = async () => phSent(await api.invoke('phone:browse', dv.id));
   $('#pclip').onclick = async () => { const t = await api.invoke('clip:text'); if (t && await api.invoke('phone:sendText', t, dv.id)) toast('Pano telefona gönderildi'); else toast('Panoda metin yok'); };
+  // the name turns into a field: Enter or clicking away saves, Esc cancels, an empty name restores the model name
+  $('#pname').onclick = () => {
+    const btn = $('#pname'), inp = document.createElement('input');
+    inp.className = 'pname-in'; inp.value = dv.name; inp.maxLength = 40; inp.placeholder = 'Telefonun adı'; inp.spellcheck = false;
+    btn.replaceWith(inp); api.send('focus', true); inp.focus(); inp.select(); phRenaming = true;
+    let done = false;
+    const finish = async keep => {
+      if (done) return; done = true;
+      const v = inp.value.trim();
+      if (keep && v !== dv.name) { const n = await api.invoke('phone:rename', dv.id, v); if (n) toast('Adı “' + n + '” oldu'); }
+      phRenaming = false; paintPhone();
+    };
+    inp.onkeydown = e => { if (e.key === 'Enter') finish(true); else if (e.key === 'Escape') { e.stopPropagation(); finish(false); } };
+    inp.onblur = () => finish(true);
+  };
   $('#pshowqr').onclick = () => { phView = 'qr'; paintPhone(); };
   $('#punpair').onclick = () => { if ($('#punpair').dataset.sure) { api.send('phone:unpair', dv.id); phSel = ''; toast(dv.name + ' kaldırıldı'); } else { $('#punpair').dataset.sure = 1; $('#punpair').textContent = 'Emin misin? Tekrar tıkla'; } };
   const dz = $('#pdrop');
   dz.ondragover = e => { e.preventDefault(); dz.classList.add('over'); }; dz.ondragleave = () => dz.classList.remove('over');
   $('.pmain').ondragover = e => e.preventDefault();
-  $('.pmain').ondrop = async e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('over'); const paths = [...e.dataTransfer.files].map(f => api.pathOf(f)).filter(Boolean); const n = await api.invoke('phone:sendFiles', paths, dv.id); if (n) toast(n + ' dosya telefona hazır'); };
+  $('.pmain').ondrop = async e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('over'); const paths = [...e.dataTransfer.files].map(f => api.pathOf(f)).filter(Boolean); phSent(await api.invoke('phone:sendFiles', paths, dv.id)); };
   $$('[data-open]', box).forEach(b => b.onclick = () => api.send('phone:open', b.dataset.open));
   $$('[data-rev]', box).forEach(b => b.onclick = () => api.send('phone:reveal', b.dataset.rev));
   $$('[data-rm]', box).forEach(b => b.onclick = () => api.send('phone:remove', b.dataset.rm));
   $$('[data-copy]', box).forEach(b => b.onclick = () => { const it = st.items.find(x => x.id === b.dataset.copy); if (it) { api.send('clips:write', it.text); toast('Kopyalandı'); } });
+}
+
+/* ---------- weather (card left of the grid + page) ---------- */
+const WXW = 158;   // width the card adds to the grid panel
+let WX = null;
+const WX_TEXT = c => c === 0 ? 'Açık' : c === 1 ? 'Az bulutlu' : c === 2 ? 'Parçalı bulutlu' : c === 3 ? 'Kapalı' : c === 45 || c === 48 ? 'Sisli'
+  : c >= 51 && c <= 55 ? 'Çisenti' : c === 56 || c === 57 ? 'Dondurucu çisenti' : c === 61 ? 'Hafif yağmurlu' : c === 63 ? 'Yağmurlu' : c === 65 ? 'Şiddetli yağmur'
+  : c === 66 || c === 67 ? 'Dondurucu yağmur' : c === 71 ? 'Hafif kar' : c === 73 ? 'Karlı' : c === 75 ? 'Yoğun kar' : c === 77 ? 'Kar taneleri'
+  : c >= 80 && c <= 82 ? 'Sağanak yağışlı' : c === 85 || c === 86 ? 'Kar sağanağı' : c === 95 ? 'Gök gürültülü' : c >= 96 ? 'Dolulu fırtına' : '—';
+// coloured weather icons (sun, moon, cloud, rain, snow, storm, fog) in the app's line style
+function wxIcon(code, day, size) {
+  const sun = (cx, cy, r) => `<g stroke="#ffc53d" fill="#ffc53d22" stroke-width="1.7" stroke-linecap="round"><circle cx="${cx}" cy="${cy}" r="${r}"/>${[0, 45, 90, 135, 180, 225, 270, 315].map(a => { const t = a * Math.PI / 180, r1 = r + 2.2, r2 = r + 4.4; return `<path d="M${(cx + r1 * Math.cos(t)).toFixed(1)} ${(cy + r1 * Math.sin(t)).toFixed(1)}L${(cx + r2 * Math.cos(t)).toFixed(1)} ${(cy + r2 * Math.sin(t)).toFixed(1)}"/>`; }).join('')}</g>`;
+  // cloud / moon / fog / snow colours come from the theme (--wx-*): light tones vanish on the light theme
+  const moon = (cx, cy) => `<path d="M${cx + 3} ${cy - 6.5}a7 7 0 1 0 5.6 10.6A6 6 0 0 1 ${cx + 3} ${cy - 6.5}z" style="stroke:var(--wx-moon);fill:color-mix(in srgb,var(--wx-moon) 13%,transparent)" stroke-width="1.7" stroke-linejoin="round"/>`;
+  const cloud = (dy = 0) => `<path d="M7.5 ${19 + dy}h10a4 4 0 0 0 .4-8 5.6 5.6 0 0 0-10.8 1.4A3.4 3.4 0 0 0 7.5 ${19 + dy}z" style="stroke:var(--wx-cloud);fill:color-mix(in srgb,var(--wx-cloud) 12%,transparent)" stroke-width="1.7" stroke-linejoin="round"/>`;
+  const drops = col => `<g stroke="${col}" stroke-width="1.8" stroke-linecap="round"><path d="M9 21.2l-.8 1.8M13 21.2l-.8 1.8M17 21.2l-.8 1.8"/></g>`;
+  const c = code; let g;
+  if (c === 0) g = day ? sun(13, 13, 4.6) : moon(11, 13);
+  else if (c === 1 || c === 2) g = (day ? sun(9, 8.5, 3.2) : moon(7, 9)) + cloud(1.5);
+  else if (c === 3) g = cloud(0);
+  else if (c === 45 || c === 48) g = cloud(-2) + '<g style="stroke:var(--wx-fog)" stroke-width="1.7" stroke-linecap="round"><path d="M5 20h12M8 23h11"/></g>';
+  else if (c >= 95) g = cloud(-2.5) + '<path d="M12.5 17.5l-2.5 3.6h3l-2 3.6" stroke="#ffc53d" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+  else if ((c >= 71 && c <= 77) || c === 85 || c === 86) g = cloud(-2.5) + '<g style="fill:var(--wx-snow)"><circle cx="9" cy="21" r="1.1"/><circle cx="13" cy="22.5" r="1.1"/><circle cx="17" cy="21" r="1.1"/></g>';
+  else g = cloud(-2.5) + drops(c >= 51 && c <= 57 ? '#7cc4ff' : '#4aa3ff');
+  return `<svg class="wxi" viewBox="0 0 26 26" width="${size}" height="${size}" fill="none">${g}</svg>`;
+}
+const deg = t => (t == null ? '–' : Math.round(t)) + '°';
+function paintWxCard() {
+  const c = $('#wxc'); if (!c) return;
+  if (!WX || WX.error) { c.innerHTML = `<div class="wxload">${wxIcon(2, true, 30)}<small>${WX ? esc(WX.error) : 'Hava durumu yükleniyor…'}</small></div>`; return; }
+  const d = (WX.days && WX.days[0]) || {}, row = c.classList.contains('row');
+  c.innerHTML = `${wxIcon(WX.cur.code, WX.cur.day, row ? 32 : 48)}<div class="wxt"><b>${deg(WX.cur.t)}</b>${row ? '' : `<span>${WX_TEXT(WX.cur.code)}</span>`}</div>
+    <div class="wxl">${ic('loc', 11)}<span>${esc(WX.loc.name)}</span></div>${row ? '' : `<small class="wxhl">↑${deg(d.max)}  ↓${deg(d.min)}</small>`}`;
+  c.title = `${WX.loc.name} · ${WX_TEXT(WX.cur.code)} · ${deg(WX.cur.t)}${WX.stale ? ' · güncellenemedi' : ''} — ayrıntılar için tıkla`;
+}
+function vWeather(root) {
+  root.innerHTML = '<div class="wxv"></div>';
+  const paint = () => {
+    const box = $('.wxv', root); if (!box) return;
+    if (!WX || WX.error) { box.innerHTML = `<div class="wxload">${wxIcon(2, true, 40)}<small>${WX ? esc(WX.error) : 'Yükleniyor…'}</small></div>`; return; }
+    const days = WX.days || [], lo = Math.min(...days.map(d => d.min)), hi = Math.max(...days.map(d => d.max)), span = Math.max(1, hi - lo);
+    const name = (d, i) => i === 0 ? 'Bugün' : new Date(d.date + 'T12:00').toLocaleDateString('tr-TR', { weekday: 'short' });
+    box.innerHTML = `<div class="wxnow">${wxIcon(WX.cur.code, WX.cur.day, 76)}<b class="wxbig">${deg(WX.cur.t)}</b><span class="wxtxt">${WX_TEXT(WX.cur.code)}</span>
+        <div class="wxmeta"><span>Hissedilen ${deg(WX.cur.feels)}</span><span>Nem %${Math.round(WX.cur.hum)}</span><span>Rüzgâr ${Math.round(WX.cur.wind)} km/sa</span></div></div>
+      <div class="wxside"><div class="wxloc"><span class="wxpin">${ic('loc', 13)}</span><input class="field" id="wxq" placeholder="${esc(WX.loc.name)}${WX.loc.auto ? ' (otomatik)' : ''} · şehir ara" spellcheck="false"><button class="icon" id="wxauto" title="Konumu otomatik bul">${ic('refresh', 14)}</button><div class="wxres" id="wxres" hidden></div></div>
+        <div class="wxdays">${days.map((d, i) => `<div class="wxd"><span class="wxdn">${name(d, i)}</span>${wxIcon(d.code, true, 22)}<span class="wxr">${d.rain != null && d.rain >= 20 ? '%' + d.rain : ''}</span><span class="wxlo">${deg(d.min)}</span><span class="wxbar"><i style="left:${((d.min - lo) / span * 100).toFixed(1)}%;right:${((hi - d.max) / span * 100).toFixed(1)}%"></i></span><span class="wxhi">${deg(d.max)}</span></div>`).join('')}</div></div>`;
+    const q = $('#wxq', box), resBox = $('#wxres', box);
+    q.onfocus = () => api.send('focus', true);
+    let t = 0;
+    q.oninput = () => { clearTimeout(t); t = setTimeout(async () => {
+      if (!q.value.trim()) { resBox.hidden = true; return; }
+      const list = await api.invoke('weather:search', q.value);
+      resBox.hidden = false;
+      if (list === null) { resBox.innerHTML = '<div class="wxnone">Arama yapılamadı</div>'; return; }
+      resBox.innerHTML = list.length ? list.map((r, i) => `<button data-i="${i}"><b>${esc(r.name)}</b><small>${esc(r.sub)}</small></button>`).join('') : '<div class="wxnone">Bulunamadı</div>';
+      $$('[data-i]', resBox).forEach(b => b.onclick = async () => { S.settings.weatherLoc = list[+b.dataset.i]; save('settings'); WX = await api.invoke('weather:get', true); paint(); toast('Konum: ' + WX.loc.name); });
+    }, 300); };
+    q.onkeydown = e => { if (e.key === 'Escape') { q.value = ''; resBox.hidden = true; } if (e.key === 'Enter') { const b = $('[data-i]', resBox); if (b) b.click(); } };
+    $('#wxauto', box).onclick = async () => { delete S.settings.weatherLoc; save('settings'); WX = await api.invoke('weather:get', true); paint(); toast('Konum otomatik: ' + (WX && WX.loc ? WX.loc.name : '—')); };
+  };
+  paint();
+  api.invoke('weather:get').then(d => { if (d) { WX = d; paint(); } });
 }
 
 /* ---------- notifications ---------- */
@@ -1629,7 +2157,7 @@ let ntFocus = null, ntApp = '', ntLit = null;
 const ntExp = new Set();   // expanded cards survive repaints (e.g. when an app icon arrives)
 const ntAsked = new Set();
 const ntUnread = () => (S.notifs || []).filter(n => n.at > (S.notifSeen || 0)).length;
-const ntIcon = (n, s = 34) => { const i = ntIconOf(n); return `<span class="nic" style="width:${s}px;height:${s}px">${i ? `<img src="data:image/png;base64,${i}" alt="">` : esc((n.app.trim()[0] || '?').toLocaleUpperCase('tr-TR'))}</span>`; };
+const ntIcon = (n, s = 34) => { const i = ntIconOf(n); return `<span class="nic" style="width:${s}px;height:${s}px">${i ? `<img src="data:image/png;base64,${i}" alt="">` : ntFallback(n, Math.round(s * .5))}</span>`; };
 const ntTime = t => new Date(t).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 function ntDay(t) {
   const d = new Date(t), today = new Date(); today.setHours(0, 0, 0, 0);
@@ -1653,7 +2181,10 @@ const ntAgo = t => { const s = (Date.now() - t) / 1000; return s < 60 ? 'şimdi'
 function paintNotifs() {
   const box = $('.ntv'); if (!box) return;
   const all = S.notifs || [];
-  $('#barActions').innerHTML = all.length ? `<button class="icon" id="ntclear" title="Tümünü temizle">${ic('trash', 16)}</button>` : '';
+  const byWin = !S.settings.dnd && dndOn();   // on because of Windows, not the app's switch
+  $('#barActions').innerHTML = `<button class="icon dndb ${dndOn() ? 'on' : ''}" id="ntdnd" title="${byWin ? 'Windows rahatsız etme modunda' : dndOn() ? 'Rahatsız etmeyi kapat' : 'Rahatsız etme: bildirimler adada gösterilmez'}">${ic('moon', 16)}</button>`
+    + (all.length ? `<button class="icon" id="ntclear" title="Tümünü temizle">${ic('trash', 16)}</button>` : '');
+  $('#ntdnd').onclick = () => { if (byWin) return toast('Windows’ta rahatsız etme açık · Ayarlar’dan izlemeyi kapatabilirsin'); setDnd(!S.settings.dnd); paintNotifs(); };
   const cb = $('#ntclear');
   if (cb) cb.onclick = () => { if (!cb.dataset.sure) { cb.dataset.sure = 1; cb.classList.add('sure'); cb.title = 'Emin misin? Tekrar tıkla'; toast('Silmek için tekrar tıkla'); return; } S.notifs = ntApp ? all.filter(n => n.app !== ntApp) : []; ntApp = ''; save('notifs'); paintNotifs(); };
   // apps: who sent what, newest first
@@ -1664,9 +2195,9 @@ function paintNotifs() {
   $$('.ntchip', box).forEach(b => b.onclick = () => { ntApp = b.dataset.app; paintNotifs(); });
   // older entries whose app icon isn't fetched yet
   const miss = [...new Set(all.filter(n => n.aid && !S.appIcons[n.aid] && !ntAsked.has(n.aid)).map(n => n.aid))];
-  if (miss.length) { miss.forEach(a => ntAsked.add(a)); Promise.all(miss.map(a => api.invoke('notifs:icon', a).then(b => { if (b) S.appIcons[a] = b; return b; }))).then(r => { if (r.some(Boolean)) { save('appIcons'); paintNotifs(); } }); }
+  if (miss.length) { miss.forEach(a => ntAsked.add(a)); Promise.all(miss.map(a => appIcon(a).then(b => { if (b) S.appIcons[a] = b; return b; }))).then(r => { if (r.some(Boolean)) { save('appIcons'); paintNotifs(); } }); }
   const list = all.filter(n => !ntApp || n.app === ntApp);
-  let html = '', day = '';
+  let html = dndOn() ? `<div class="ntdnd">${ic('moon', 14)}<span>${byWin ? 'Windows rahatsız etme modunda' : 'Rahatsız etme açık'} · yeni bildirimler adada gösterilmez, burada birikir</span></div>` : '', day = '';
   for (const n of list) {
     const d = ntDay(n.at); if (d !== day) { day = d; html += `<div class="ntday">${esc(d)}</div>`; }
     const open = n.to ? `<button class="btn sm" data-go="${n.to}">Aç</button>` : n.aid ? `<button class="btn sm" data-aid="${n.id}">Uygulamayı aç</button>` : '';
@@ -1676,7 +2207,7 @@ function paintNotifs() {
       <div class="nta">${open}<button class="icon" data-copy="${n.id}" title="Kopyala">${ic('copy', 14)}</button><button class="icon" data-rm="${n.id}" title="Kaldır">${ic('x', 12)}</button></div></div>`;
   }
   const L = $('.ntlist', box);
-  L.innerHTML = html || `<div class="ntempty">${ic('bell', 28)}<b>Bildirim yok</b><small>${S.settings.notifs === false ? 'Windows bildirimleri kapalı · Ayarlar’dan açabilirsin' : 'Gelen bildirimler burada saklanır'}</small></div>`;
+  L.innerHTML = list.length ? html : html + `<div class="ntempty">${ic('bell', 28)}<b>Bildirim yok</b><small>${S.settings.notifs === false ? 'Windows bildirimleri kapalı · Ayarlar’dan açabilirsin' : 'Gelen bildirimler burada saklanır'}</small></div>`;
   $$('.ntc', L).forEach(c => c.onclick = e => { if (e.target.closest('button')) return; const on = c.classList.toggle('exp'); if (on) ntExp.add(c.dataset.id); else ntExp.delete(c.dataset.id); });
   $$('[data-rm]', L).forEach(b => b.onclick = () => { const c = b.closest('.ntc'); c.classList.add('gone'); setTimeout(() => { S.notifs = S.notifs.filter(n => n.id !== b.dataset.rm); save('notifs'); paintNotifs(); }, 200); });
   $$('[data-copy]', L).forEach(b => b.onclick = () => { const n = S.notifs.find(x => x.id === b.dataset.copy); api.send('clips:write', [n.title, n.body].filter(Boolean).join('\n')); toast('Kopyalandı'); });
@@ -1737,7 +2268,7 @@ function vSettings(root) {
   const st = S.settings;
   const seg = (k, opts, cls = '') => `<div class="seg ${cls}" data-seg="${k}">${opts.map(([v, l]) => `<button data-v="${v}" class="${(st[k] ?? opts[0][0]) === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
   const sw = (k, on) => `<div class="sw ${on ? 'on' : ''}" data-sw="${k}" role="switch"></div>`;
-  api.invoke('version').then(v => { const el = $('#barActions'); if (el && ui.view === 'settings') el.innerHTML = `<span class="ver">Adacık ${esc(v)}</span>`; });
+  api.invoke('update:state').then(st => { UPD = st; const el = $('#barActions'); if (el && ui.view === 'settings') { el.innerHTML = `<button class="supd" id="supd"></button><span class="ver">Adacık ${esc(st.current)}</span>`; $('#supd').onclick = () => { if (UPD && UPD.status === 'ready') api.send('update:install'); else api.send('update:check'); }; paintUpd(); } });
   root.innerHTML = `<div class="set2">
     <div class="sbox"><div class="lb">Görünüm</div>
       <div class="sline"><span>Tema</span>${seg('theme', [['auto', 'Otomatik'], ['dark', 'Koyu'], ['light', 'Açık']])}</div>
@@ -1745,7 +2276,14 @@ function vSettings(root) {
       <div class="sline"><span>Görünüm şekli</span>${seg('shape', [['notch', 'Çentik'], ['capsule', 'Kapsül']])}</div>
       <div class="sline"><span>Konum</span>${seg('position', [['left', 'Sol'], ['center', 'Orta'], ['right', 'Sağ']])}</div>
       <div class="sline"><span>Üzerine gelince aç</span>${sw('hoverOpen', st.hoverOpen !== false)}</div>
-      <div class="sline" title="Açıkken saat ve pil görünür. Kapalıyken imleç üst kenara gelene kadar gizlenir."><span>Her zaman göster</span>${sw('alwaysShow', st.alwaysShow !== false)}</div></div>
+      <div class="sline" title="Açıkken saat ve pil görünür. Kapalıyken imleç üst kenara gelene kadar gizlenir."><span>Her zaman göster</span>${sw('alwaysShow', st.alwaysShow !== false)}</div>
+      <div class="lb" style="margin-top:12px">Adada göster</div>
+      <div class="sline" title="Bir uygulama kamerayı ya da mikrofonu kullanırken adada yeşil/turuncu nokta"><span>Kamera ve mikrofon göstergesi</span>${sw('privacy', st.privacy !== false)}</div>
+      <div class="sline" title="İndirilenler klasörüne inen dosyalar ve Gezgin'deki kopyalamalar"><span>İndirme ve kopyalama ilerlemesi</span>${sw('progress', st.progress !== false)}</div>
+      <div class="sline" title="Bluetooth kulaklık bağlanınca adı ve pil seviyesi"><span>Bluetooth kulaklık bilgisi</span>${sw('btInfo', st.btInfo !== false)}</div>
+      <div class="sline" title="Bir şey kopyalandığında adada kısa bir not (içerik gösterilmez)"><span>Kopyalama bildirimi</span>${sw('copyNote', st.copyNote !== false)}</div>
+      <div class="sline" title="Win+Shift+S ile ekran görüntüsü alınca adada önizleme: metni çıkar, rafa ekle, telefona gönder, sürükle"><span>Ekran görüntüsü kısayolları</span>${sw('shotIsland', st.shotIsland !== false)}</div>
+      <div class="sline" title="Ana ekranın solunda o anki hava durumu (Open-Meteo)"><span>Hava durumu kartı</span>${sw('weather', st.weather !== false)}</div></div>
     <div class="sbox"><div class="lb">Davranış</div>
       <div class="sline"><span>Her zaman üstte</span>${sw('onTop', st.onTop !== false)}</div>
       <div class="sline"><span>Çalan şarkıyı göster</span>${sw('mini', st.mini !== false)}</div>
@@ -1753,21 +2291,29 @@ function vSettings(root) {
       <div class="sline"><span>Başlangıçta aç</span>${sw('login', !!st.login)}</div>
       <div class="sline" title="Oyun veya video tam ekrandayken adayı gizler"><span>Tam ekranda gizle</span>${sw('hideFullscreen', st.hideFullscreen !== false)}</div>
       <div class="sline" title="Windows bildirimlerini adada gösterir (içerik bilgisayardan çıkmaz)"><span>Bildirimleri göster</span>${sw('notifs', st.notifs !== false)}</div>
+      <div class="sline" title="Windows'ta Rahatsız etme / Odak açıldığında Adacık da sessize geçer"><span>Windows'un rahatsız etme modunu izle</span>${sw('dndWin', st.dndWin !== false)}</div>
       <div class="sline"><span>Ses / parlaklık göstergesi</span>${sw('osd', st.osd !== false)}</div>
+      <div class="sline" title="Medya kartı ana ekranın sağında sabit durur; kapalıyken diğer kutular gibi sayfalarda yer alır"><span>Medyayı sağa sabitle</span>${sw('mediaPin', st.mediaPin !== false)}</div>
+      <div class="sline" title="Yeni sürümü GitHub'dan arka planda indirir, uygulama kapanınca kurar"><span>Otomatik güncelle</span>${sw('autoUpdate', st.autoUpdate !== false)}</div>
       <div class="sline"><span>Zamanlayıcıyı adada göster</span>${sw('timerPill', st.timerPill !== false)}</div></div></div>
     <div class="sbtns"><button class="sbtn" id="se">${ic('tiles', 18)}Kutuları düzenle</button><button class="sbtn" id="sr">${ic('undo', 18)}Düzeni sıfırla</button><button class="sbtn" id="sc">${ic('eraser', 18)}Panoyu temizle</button><button class="sbtn warn" id="sq">${ic('power', 18)}Çıkış</button></div>`;
   $$('[data-seg]', root).forEach(g => $$('button', g).forEach(b => b.onclick = () => {
     const k = g.dataset.seg, v = b.dataset.v;
     if (k === 'accentMode' && v === 'custom') { $('#acc', root).click(); }
     if (k === 'accentMode' && v === 'wallpaper') api.invoke('accent:wall').then(c => { wallAccent = c; applyTheme(); if (!c) toast('Duvar kağıdında belirgin bir renk yok, Windows rengi kullanılıyor'); });
+    // moving the island (Sol/Orta/Sağ) leaves the cursor behind: keep the panel open a moment so it can follow
+    if (k === 'position' && st[k] !== v) { ui.keepUntil = Date.now() + 2500; setTimeout(() => { if (ui.open && !ui.hovering && !ui.pinned && !typing()) setOpen(false); }, 2600); }
     st[k] = v; $$('button', g).forEach(x => x.classList.toggle('on', x === b)); save('settings'); applyTheme(); closedState();
   }));
   $('#acc', root).oninput = e => { st.accent = e.target.value; st.accentMode = 'custom'; save('settings'); applyTheme(); };
   $$('[data-sw]', root).forEach(s => s.onclick = () => {
-    const k = s.dataset.sw, def = k === 'lyrics' || k === 'login' ? false : true, v = !(st[k] ?? def);
+    const k = s.dataset.sw, def = k === 'lyrics' || k === 'login' || k === 'dnd' ? false : true, v = !(st[k] ?? def), dndWas = dndOn();
     st[k] = v; s.classList.toggle('on', v); save('settings');
-    if (k === 'login') api.send('login', v); if (['mini', 'alwaysShow', 'hoverOpen', 'timerPill'].includes(k)) applyClosedSize(); if (k === 'lyrics') fetchLyrics();
+    if (k === 'dnd' || k === 'dndWin') dndChanged(dndWas);
+    if (k === 'login') api.send('login', v); if (['mini', 'alwaysShow', 'hoverOpen', 'timerPill', 'privacy', 'progress', 'btInfo'].includes(k)) { paintInfo(); applyClosedSize(); } if (k === 'lyrics') fetchLyrics();
   });
+  // the panel is as tall as the settings are (they grow over time): content + 14 px below the buttons
+  SIZES.settings = [700, Math.ceil(root.offsetTop + root.scrollHeight + 14 - 6)];   // sizeShell adds the 6 px top inset
   $('#se', root).onclick = () => { ui.edit = true; ui.page = 0; go('grid'); };
   $('#sr', root).onclick = () => { st.order = null; st.pages = null; st.hidden = []; st.sizes = {}; layout(); save('settings'); toast('Düzen sıfırlandı'); };
   $('#sc', root).onclick = () => { api.send('clips:clear'); toast('Pano geçmişi temizlendi'); };
@@ -1782,7 +2328,11 @@ function vSettings(root) {
   if (!st.settings || !st.settings.accentMode) S.settings.accentMode = 'windows';
   S.notes = S.notes && S.notes.length ? S.notes : [{ id: 1, text: '' }];
   S.calcHist = S.calcHist || [];
-  if (S.appIconsV !== 2) { S.appIcons = {}; S.appIconsV = 2; save('appIcons'); save('appIconsV'); }   // icons saved before 1.1.1 could be upside down
+  if (S.appIconsV !== 3 && S.appIconsV !== 4) { S.appIcons = {}; S.appIconsV = 4; save('appIcons'); save('appIconsV'); }   // refetch: older saved icons could be upside down (<1.1.1) or on a coloured square (<1.3)
+  else if (S.appIconsV === 3) (async () => {   // icons saved before 1.3.1 still carry their transparent margins: trim them once
+    for (const m of [S.appIcons, S.notifIcons]) for (const k of Object.keys(m || {})) m[k] = await normIcon(m[k]);
+    S.appIconsV = 4; save('appIcons'); save('notifIcons'); save('appIconsV');
+  })();
   clips = st.clips || [];
   Object.assign(T, S.settings.timer || {}); T.left = T.dur;
   winAccent = acc; wallAccent = wall; Object.assign(CAL, cal); battery.present = !!bat;
@@ -1790,4 +2340,5 @@ function vSettings(root) {
   drawArt($('#miniArt')); applyClosedSize();
   requestAnimationFrame(() => requestAnimationFrame(() => { shell.classList.replace('boot', 'intro'); setTimeout(() => shell.classList.remove('intro'), 400); }));   // later size changes animate again
   if (S.settings.awake) api.send('awake', true);
+  api.invoke('dnd:win').then(v => { WDND = v; if (dndOn()) dndSince = Date.now(); paintInfo(); if (!ui.open) applyClosedSize(); });
 })();

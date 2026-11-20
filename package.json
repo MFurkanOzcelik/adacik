@@ -1,13 +1,15 @@
 {
   "name": "adacik",
   "productName": "Adacık",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Windows için yüzen, Dynamic Island tarzı akıllı çentik",
   "author": "MFurkanOzcelik",
   "main": "main.js",
   "scripts": {
+    "helper": "powershell -NoProfile -ExecutionPolicy Bypass -File helper/build.ps1",
+    "postinstall": "npm run helper",
     "start": "electron .",
-    "dist": "electron-builder --win nsis"
+    "dist": "npm run helper && electron-builder --win nsis --publish never"
   },
   "license": "MIT",
   "devDependencies": {
@@ -18,6 +20,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/MFurkanOzcelik/adacik.git"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.12",
+    "tweetnacl": "1.0.3"
   },
   "build": {
     "appId": "com.adacik.app",
@@ -33,10 +39,12 @@
       "*.ps1",
       "vendor/**",
       "build/icon.png",
+      "helper/adacik-helper.exe",
       "package.json"
     ],
     "asarUnpack": [
-      "*.ps1"
+      "*.ps1",
+      "helper/adacik-helper.exe"
     ],
     "win": {
       "icon": "build/icon.png",
@@ -60,6 +68,13 @@
       "tr",
       "en-US"
     ],
-    "compression": "maximum"
+    "compression": "maximum",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "MFurkanOzcelik",
+        "repo": "adacik"
+      }
+    ]
   }
 }

@@ -1,4 +1,26 @@
 const { app, BrowserWindow, screen, globalShortcut, ipcMain, clipboard, powerSaveBlocker, shell, desktopCapturer, systemPreferences, dialog, nativeImage, ClipboardItem } = require('electron');
+// Security: IPC is only accepted from the app's own pages (index.html / capture.html in this folder). The
+// windows can't load anything else anyway (see lockWindow), this is the second lock: a foreign page that
+// somehow got into a window could otherwise call every channel (open files, launch programs…).
+{
+  const appUrl = require('url').pathToFileURL(__dirname).href + '/';
+  const ours = e => { try { const u = e.senderFrame && e.senderFrame.url; return !!u && u.startsWith(appUrl); } catch { return false; } };
+  const on = ipcMain.on.bind(ipcMain), handle = ipcMain.handle.bind(ipcMain);
+  ipcMain.on = (ch, fn) => on(ch, (e, ...a) => { if (ours(e)) fn(e, ...a); });
+  ipcMain.handle = (ch, fn) => handle(ch, (e, ...a) => ours(e) ? fn(e, ...a) : null);
+}
+// The app's windows stay on the app's own page: no navigation (a web link dropped on the island would
+// otherwise load that site *inside* the island, with the app's bridge), no new windows, no webviews.
+function lockWindow(w) {
+  const wc = w.webContents;
+  wc.on('will-navigate', e => e.preventDefault());
+  wc.on('will-redirect', e => e.preventDefault());
+  wc.setWindowOpenHandler(() => ({ action: 'deny' }));
+  wc.on('will-attach-webview', e => e.preventDefault());
+}
+// Draw page content on the CPU and only composite on the GPU: the GPU process keeps ~90 MB less
+// (measured 150 → 60 MB) with the same 60 fps and no extra idle CPU.
+app.commandLine.appendSwitch('disable-gpu-rasterization');
 // PowerShell can't read files inside app.asar, so the .ps1 helpers ship unpacked next to it
 const RES = __dirname.replace(/app\.asar$/, 'app.asar.unpacked');
 // keep settings, notes and clipboard in the same folder for the installed app and `npm start` (the folder kept its first name)
@@ -11,6 +33,11 @@ const crypto = require('crypto');
 const http = require('http');
 const calsync = require('./calsync');
 const { Phone } = require('./phone');
+const updater = require('./updater');
+const { Weather } = require('./weather');
+let weather = null;
+ipcMain.handle('weather:get', (_, force) => weather ? weather.get(!!force) : null);
+ipcMain.handle('weather:search', (_, q) => weather ? weather.search(q) : []);
 
 // Test mode (KLON_TEST=1): side-effect channels are recorded instead of executed.
 if (process.env.KLON_TEST) {
@@ -20,9 +47,10 @@ if (process.env.KLON_TEST) {
   ipcMain.handle('test:sent', () => sent);
 }
 
-const W = 1000, H = 640;
+const W = 1000, H = 720;   // transparent and click-through: tall enough for the settings page plus a toast under it
 let win, blocker = null;
 let rect = { w: 140, h: 8 };
+let grace = null;   // the panel's previous area while it shrinks under the cursor
 let hovering = false, leaveSince = 0, enterSince = 0;
 let hoverEnabled = true;
 let position = 'center';
@@ -32,8 +60,11 @@ const EDGE = 12;
 const storeFile = () => path.join(app.getPath('userData'), 'state.json');
 let store = {};
 function loadStore() { try { store = JSON.parse(fs.readFileSync(storeFile(), 'utf8')); } catch { store = {}; } }
-let saveT;
-function saveStore() { clearTimeout(saveT); saveT = setTimeout(() => { try { fs.writeFileSync(storeFile(), JSON.stringify(store)); } catch {} }, 300); }
+let saveT = null;
+// Written to a temp file and renamed over the old one, so a crash or power cut mid-write can't leave a
+// half-written state.json (which would load as empty and lose every setting and note).
+function writeStore() { saveT = null; try { const f = storeFile(), tmp = f + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(store)); fs.renameSync(tmp, f); } catch {} }
+function saveStore() { clearTimeout(saveT); saveT = setTimeout(writeStore, 300); }
 
 // ---------- window ----------
 function winPos() {
@@ -51,7 +82,7 @@ function shellCenter() {
 function create() {
   const { bounds } = screen.getPrimaryDisplay();
   win = new BrowserWindow({
-    width: W, height: H,
+    width: W, height: Math.min(H, bounds.height),
     ...winPos(), y: bounds.y,
     frame: false, transparent: true, alwaysOnTop: true, skipTaskbar: true,
     resizable: false, hasShadow: false, show: false, backgroundColor: '#00000000',
@@ -61,6 +92,7 @@ function create() {
   win.setIgnoreMouseEvents(true, { forward: true });
   win.webContents.on('console-message', (_e, ...a) => console.log('[renderer]', ...a.map(x => (x && x.message) || x)));
   win.webContents.on('render-process-gone', (_e, d) => console.log('GONE', d));
+  lockWindow(win);
   win.loadFile('index.html');
   // The PowerShell helper compiles C# when it starts and competes for the CPU with the first paint,
   // so it starts once the island is on screen.
@@ -77,8 +109,16 @@ function tick() {
   const hw = Math.max(rect.w, 170) / 2 + 14;
   const hh = Math.max(rect.h, 14) + 18;
   const cx = shellCenter();
-  const inside = !capWin && !fsHidden && x > cx - hw && x < cx + hw && y >= -2 && y < hh;
-  const now = Date.now();
+  const inNow = x > cx - hw && x < cx + hw && y >= -2 && y < hh;
+  // The open panel just got smaller under a still cursor (e.g. lyrics turned off): the area it covered still
+  // counts as inside until the cursor leaves that area or reaches the new panel.
+  let inGrace = false;
+  if (grace) {
+    const gw = Math.max(grace.w, 170) / 2 + 14, gh = Math.max(grace.h, 14) + 18;
+    inGrace = x > grace.cx - gw && x < grace.cx + gw && y >= -2 && y < gh;
+    if (!inGrace || inNow) grace = null;
+  }
+  const inside = !capWin && !fsHidden && (inNow || inGrace);  const now = Date.now();
   if (inside) {
     leaveSince = 0;
     if (!hovering) {
@@ -106,7 +146,9 @@ function dropFile(x) {
   if (x.type === 'image' && !clips.some(y => y !== x && y.hash === x.hash)) { try { fs.unlinkSync(path.join(clipDir(), x.hash + '.png')); } catch {} }
   return false;
 }
-function addClip(c) {
+const CLIP_MAX = 1e6;   // longer texts (logs, whole files) stay out of the history: it lives in state.json, rewritten on every save
+function addClip(c, quiet) {
+  if (c.type !== 'image' && (c.text || '').length > CLIP_MAX) return;
   const old = clips.find(x => c.type === 'image' ? x.hash === c.hash : x.type !== 'image' && x.text === c.text);
   if (old && clips[0] === old) return;
   const item = { ...c, id: old ? old.id : newId(), at: Date.now(), pinned: old ? !!old.pinned : false };
@@ -115,6 +157,8 @@ function addClip(c) {
   let n = 0, im = 0;
   clips = clips.filter(x => x.pinned || (x.type === 'image' && ++im > 15 ? dropFile(x) : ++n <= 40 || dropFile(x)));
   sendClips();
+  // the island says something was copied (size only, never the content: it may be a password)
+  if (!quiet && win && !win.isDestroyed()) win.webContents.send('clip:new', item.type === 'image' ? { type: 'image', w: item.w, h: item.h } : { type: 'text', len: (item.text || '').length });
 }
 let reading = false;
 async function checkClipboard() {
@@ -128,13 +172,72 @@ async function checkClipboard() {
       const f = path.join(clipDir(), hash + '.png'); if (!fs.existsSync(f)) fs.writeFileSync(f, buf);
       const img = nativeImage.createFromBuffer(buf), { width: w, height: h } = img.getSize();
       const thumb = img.resize(w >= h ? { width: Math.min(w, 240) } : { height: Math.min(h, 180) }).toDataURL();
-      addClip({ type: 'image', hash, w, h, thumb });
+      const shot = Date.now() < shotUntil && hash !== lastShotHash && store.settings?.shotIsland !== false;
+      if (shot) { shotUntil = 0; lastShotHash = hash; }
+      addClip({ type: 'image', hash, w, h, thumb }, shot);   // a screenshot gets the island instead of the copy note
+      if (shot) onScreenshot(buf, img);
     }
   } catch {} finally { reading = false; }
 }
 // The helper reports Windows' clipboard sequence number, so the clipboard is read only when it changed.
 let lastSeq = null, seqAt = 0;
-function onClipSeq(seq) { seqAt = Date.now(); if (seq !== lastSeq) { lastSeq = seq; checkClipboard(); } }
+function onClipSeq(seq, owner) {
+  seqAt = Date.now(); if (seq === lastSeq) return; lastSeq = seq;  // Windows' Snipping Tool (Win+Shift+S, PrtScn) wrote it: the image that follows is a screenshot.
+  // (It writes the same image again a second later without an owner; the hash check below skips that.)
+  if (/^(SnippingTool|ScreenClippingHost|ScreenSketch)$/i.test(owner || '')) shotUntil = Date.now() + 3000;
+  checkClipboard();
+}
+
+// ---------- screenshot island: a Win+Shift+S screenshot shows up in the island with quick actions ----------
+let shotUntil = 0, lastShotHash = '';
+// where Windows saves screenshots (Snipping Tool's auto-save): the Screenshots known folder, else Pictures\Screenshots
+let shotsDirCache = null;
+function screenshotsDir() {
+  if (shotsDirCache) return shotsDirCache;
+  shotsDirCache = path.join(app.getPath('pictures'), 'Screenshots');
+  execFile('reg', ['query', 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\User Shell Folders', '/v', '{B7BEDE81-DF94-4682-A7D8-57A52620B86F}'], { windowsHide: true }, (e, out) => {
+    const m = !e && String(out).match(/REG_(?:EXPAND_)?SZ\s+(.+)/); if (m) shotsDirCache = m[1].trim().replace(/%([^%]+)%/g, (_, v) => process.env[v] || '');
+  });
+  return shotsDirCache;
+}
+// our own copy when the Snipping Tool didn't save one (kept 3 days: long enough to drag, shelve or send it)
+const shotTmpDir = () => { const d = path.join(app.getPath('userData'), 'shots'); fs.mkdirSync(d, { recursive: true }); return d; };
+const shotName = d => 'Ekran görüntüsü ' + d.toISOString().slice(0, 10) + ' ' + d.toTimeString().slice(0, 8).replace(/:/g, '') + '.png';
+function cleanShotTmp() { try { const d = shotTmpDir(), old = Date.now() - 3 * 864e5; for (const f of fs.readdirSync(d)) { const p = path.join(d, f); if (fs.statSync(p).mtimeMs < old) fs.unlinkSync(p); } } catch {} }
+async function onScreenshot(buf, img) {
+  const at = Date.now(); let file = null;
+  // the Snipping Tool saves its file at about the same moment: wait for it a little
+  for (let i = 0; i < 6 && !file; i++) {
+    try {
+      const d = screenshotsDir();
+      const f = fs.readdirSync(d).filter(n => /\.png$/i.test(n)).map(n => ({ p: path.join(d, n), t: fs.statSync(path.join(d, n)).mtimeMs })).filter(x => x.t > at - 6000).sort((a, b) => b.t - a.t)[0];
+      if (f) file = f.p;
+    } catch {}
+    if (!file) await new Promise(r => setTimeout(r, 300));
+  }
+  const saved = !!file;
+  if (!file) { file = path.join(shotTmpDir(), shotName(new Date(at))); try { fs.writeFileSync(file, buf); } catch { return; } }
+  const { width: w, height: h } = img.getSize(), k = Math.min(1, 240 / w, 156 / h);
+  const thumb = img.resize({ width: Math.max(1, Math.round(w * k)), height: Math.max(1, Math.round(h * k)), quality: 'good' }).toDataURL();
+  if (win && !win.isDestroyed()) win.webContents.send('shot:new', { path: file, saved, thumb, w, h });
+}
+// "Kaydet" when auto-save is off: into the Screenshots folder, under a unique name
+ipcMain.handle('shot:save', (_, p) => {
+  try {
+    if (!p || !fs.existsSync(p)) return null;
+    const d = screenshotsDir(); fs.mkdirSync(d, { recursive: true });
+    let dest = path.join(d, path.basename(p)); for (let i = 1; fs.existsSync(dest); i++) dest = path.join(d, path.basename(p, '.png') + ` (${i}).png`);
+    fs.copyFileSync(p, dest); return dest;
+  } catch { return null; }
+});
+// test mode only: feed an image through the same path a Snipping Tool screenshot takes
+if (process.env.KLON_TEST) ipcMain.handle('test:shot', async (_, f) => { const buf = fs.readFileSync(f); await onScreenshot(buf, nativeImage.createFromBuffer(buf)); return true; });
+ipcMain.handle('shot:phone', (_, p) => {   // to the phone seen most recently (online first)
+  if (!phone) return { error: 'none' };
+  const st = phone.state(), d = st.devices.slice().sort((a, b) => (b.online - a.online) || (b.lastSeen - a.lastSeen))[0];
+  if (!d) return { error: 'none' };
+  const r = phone.sendFiles([p], d.id); return r.n ? { name: d.name, online: d.online } : { error: 'file' };
+});
 // Fallback while the helper is not running: cheap text-only polling.
 let lastText = '';
 async function pollClipText() { if (Date.now() - seqAt < 3000) return; try { const t = await clipboard.readText(); if (typeof t === 'string' && t && t !== lastText) { lastText = t; addClip({ type: 'text', text: t }); } } catch {} }
@@ -224,7 +327,12 @@ async function buildApps() {
 }
 
 // ---------- misc ipc ----------
-ipcMain.on('rect', (_, r) => { rect = r; });
+ipcMain.on('rect', (_, r) => {
+  // an open panel (taller than any pill) shrinking while hovered keeps its old area for a moment, see tick()
+  if (hovering && r.h > 60 && (r.w < rect.w || r.h < rect.h)) grace = { w: rect.w, h: rect.h, cx: shellCenter() };
+  else if (r.h <= 60) grace = null;
+  rect = r;
+});
 ipcMain.on('ignore', (_, v) => { if (win && !win.isDestroyed()) win.setIgnoreMouseEvents(v, { forward: true }); });
 ipcMain.on('focus', (_, v) => { if (!win) return; if (v) win.focus(); else win.blur(); });
 ipcMain.handle('store:get', () => ({ ...store }));
@@ -234,7 +342,12 @@ ipcMain.on('store:set', (_, k, v) => {
   hoverEnabled = v.hoverOpen !== false;
   if (win && (v.position || 'center') !== position) { position = v.position || 'center'; win.setPosition(winPos().x, screen.getPrimaryDisplay().bounds.y); }
   if (win) win.setAlwaysOnTop(v.onTop !== false, 'screen-saver');
+  if ((v.autoUpdate !== false) !== autoUpdateOn) { autoUpdateOn = v.autoUpdate !== false; updater.schedule(autoUpdateOn); }
 });
+let autoUpdateOn = true;
+ipcMain.handle('update:state', () => updater.state());
+ipcMain.on('update:check', () => updater.check());
+ipcMain.on('update:install', () => { if (!process.env.KLON_TEST) updater.install(); });
 ipcMain.handle('accent:get', () => { try { return '#' + systemPreferences.getAccentColor().slice(0, 6); } catch { return '#f08a24'; } });
 ipcMain.handle('version', () => app.getVersion());
 
@@ -313,11 +426,13 @@ ipcMain.handle('phone:state', () => phone ? phone.state() : null);
 ipcMain.handle('phone:start', async () => { try { return await phone.start(); } catch (e) { return { error: e.message }; } });
 ipcMain.on('phone:stop', () => phone && phone.stop());
 ipcMain.on('phone:unpair', (_, dev) => phone && phone.removeDevice(dev));
+ipcMain.handle('phone:rename', (_, dev, name) => phone ? phone.renameDevice(dev, name) : false);
 ipcMain.on('phone:newCode', () => phone && phone.newPairingCode());
-ipcMain.handle('phone:sendFiles', (_, paths, dev) => phone ? phone.sendFiles(paths || [], dev) : 0);
+ipcMain.on('phone:merge', (_, yes) => phone && phone.resolveMerge(!!yes));
+ipcMain.handle('phone:sendFiles', (_, paths, dev) => phone ? phone.sendFiles(paths || [], dev) : null);
 ipcMain.handle('phone:browse', async (_, dev) => {
   const r = await dialog.showOpenDialog(win, { properties: ['openFile', 'multiSelections'] });
-  return r.canceled ? 0 : phone.sendFiles(r.filePaths, dev);
+  return r.canceled ? null : phone.sendFiles(r.filePaths, dev);
 });
 ipcMain.handle('phone:sendText', (_, t, dev) => phone ? phone.sendText(t, dev) : false);
 ipcMain.on('phone:remove', (_, id) => phone && phone.remove(id));
@@ -503,6 +618,7 @@ ipcMain.handle('shot', async (_, opts) => {
       webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true }
     });
     capWin.setAlwaysOnTop(true, 'screen-saver', 1);
+    lockWindow(capWin);
     capWin.loadFile('capture.html', { query: { mode: pick ? 'pick' : ocr ? 'ocr' : 'shot' } });
     capWin.once('ready-to-show', () => { capWin.show(); capWin.focus(); });
     capWin.on('closed', () => finish(null));
@@ -555,7 +671,17 @@ ipcMain.handle('media:thumb', () => lastThumb);
 function helperLine(m) {
   if (!win || win.isDestroyed()) return;
   if (m.notif) { win.webContents.send('notif', m.notif); return; }
-  if (typeof m.cb === 'number') onClipSeq(m.cb);
+  if (m.done) { win.webContents.send('act:done', m.done); return; }   // a download / copy finished
+  if (m.bt) { win.webContents.send('act:bt', m.bt); return; }         // headphones connected, gone, battery
+  // camera/mic users and running transfers: only forwarded when they change
+  if (m.cam) {
+    const act = { cam: m.cam, mic: m.mic || [], prog: m.prog || [] }, k = JSON.stringify(act);
+    if (k !== lastAct) { lastAct = k; win.webContents.send('act', act); }
+    delete m.cam; delete m.mic; delete m.prog;
+  }
+  // Windows' Do Not Disturb: 0 off, 1 priority only, 2 alarms only (-1 unknown); forwarded when it changes
+  if (typeof m.dnd === 'number') { if (m.dnd !== winDnd) { winDnd = m.dnd; win.webContents.send('dnd:win', winDnd); } delete m.dnd; }
+  if (typeof m.cb === 'number') onClipSeq(m.cb, m.cbo); delete m.cbo;
   if (typeof m.fs === 'boolean') onFullscreen(m.fs);
   if (m.thumb !== undefined || m.none) lastThumb = m.none ? '' : m.thumb;
   // The helper reports ~3×/s; the panel only needs to hear about real changes (the play position
@@ -565,7 +691,10 @@ function helperLine(m) {
   lastMediaKey = key; lastMediaAt = now;
   win.webContents.send('media', m);
 }
-let lastMediaKey = '', lastMediaAt = 0;
+let lastMediaKey = '', lastMediaAt = 0, lastAct = '', winDnd = -1;
+ipcMain.handle('dnd:win', () => winDnd);   // after a reload the panel asks instead of waiting for a change
+// a finished download in the island: click shows it in its folder
+ipcMain.on('act:reveal', (_, p) => { const dl = app.getPath('downloads'); if (typeof p === 'string' && path.resolve(p).toLowerCase().startsWith(dl.toLowerCase()) && fs.existsSync(p) && !process.env.KLON_TEST) shell.showItemInFolder(p); });
 // Hide the island while a game or video runs fullscreen.
 let fsHidden = false;
 function onFullscreen(full) {
@@ -575,8 +704,13 @@ function onFullscreen(full) {
   if (want) win.hide(); else win.showInactive();
   win.webContents.send('fullscreen', want);
 }
+// The compiled helper (helper/helper.cs) uses ~6 MB instead of ~47 MB for PowerShell and answers in
+// 0.2 s instead of 1.4 s; media.ps1 does the same job and is kept as a fallback when it isn't built.
+const helperExe = (process.env.KLON_TEST && process.env.KLON_HELPER) || path.join(RES, 'helper', 'adacik-helper.exe');   // tests may run a freshly built copy
 function startMedia() {
-  mediaProc = spawn('powershell', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', path.join(RES, 'media.ps1'), '-OwnPid', String(process.pid)], { windowsHide: true, stdio: ['pipe', 'pipe', 'ignore'] });
+  mediaProc = fs.existsSync(helperExe)
+    ? spawn(helperExe, ['--pid', String(process.pid), '--downloads', app.getPath('downloads')], { windowsHide: true, stdio: ['pipe', 'pipe', 'ignore'] })
+    : spawn('powershell', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', path.join(RES, 'media.ps1'), '-OwnPid', String(process.pid)], { windowsHide: true, stdio: ['pipe', 'pipe', 'ignore'] });
   mediaProc.on('exit', () => { mediaProc = null; setTimeout(startMedia, 2000); });
   let buf = ''; mediaProc.stdout.setEncoding('utf8');
   mediaProc.stdout.on('data', d => {
@@ -646,7 +780,8 @@ const lock = process.env.KLON_TEST ? true : app.requestSingleInstanceLock();
 if (!lock) app.quit();
 app.whenReady().then(() => {
   loadStore();
-  clips = (store.clips || []).filter(c => c && (typeof c.text === 'string' || c.type === 'image')).map(c => ({ ...c, type: c.type || 'text', id: c.id || newId() }));
+  clips = (store.clips || []).filter(c => c && (typeof c.text === 'string' || c.type === 'image')).map(c => ({ ...c, type: c.type || 'text', id: c.id || newId() }))
+    .filter(c => c.type !== 'image' || fs.existsSync(path.join(clipDir(), c.hash + '.png')));   // an image whose file is gone can't be copied again: drop it
   lastText = (clips.find(c => c.type === 'text') || {}).text || '';
   hoverEnabled = !(store.settings && store.settings.hoverOpen === false);
   position = (store.settings && store.settings.position) || 'center';
@@ -654,12 +789,17 @@ app.whenReady().then(() => {
   setTimeout(loadApps, 2500);
   calState = store.calCache || calState;
   create();   // the window first: everything below can happen while it loads
+  weather = new Weather(store, saveStore);
+  autoUpdateOn = !(store.settings && store.settings.autoUpdate === false);
+  updater.init((ch, d) => { if (win && !win.isDestroyed()) win.webContents.send(ch, d); }, autoUpdateOn);
   phone = new Phone({ store, save: saveStore, emit: phoneEmit, downloads: app.getPath('downloads'), test: !!process.env.KLON_TEST });
   setTimeout(syncCalendars, 6000); setInterval(syncCalendars, 15 * 60 * 1000);
+  setTimeout(cleanShotTmp, 30000);   // our own screenshot copies older than 3 days
   setInterval(pollClipText, 1500);
   if (store.settings && store.settings.onTop === false) win.setAlwaysOnTop(false);
   systemPreferences.on('accent-color-changed', (_e, c) => win && win.webContents.send('accent', '#' + String(c).slice(0, 6)));
   globalShortcut.register('Control+Alt+N', () => win.webContents.send('toggle-pin'));
 });
-app.on('will-quit', () => { globalShortcut.unregisterAll(); stopShare(); try { phone && phone.stop(); } catch {} try { const m = mediaProc; mediaProc = null; m && m.removeAllListeners('exit'); m && m.kill(); } catch {} });
+app.on('will-quit', () => { if (saveT) { clearTimeout(saveT); writeStore(); }   // the last edits (< 300 ms old) too
+  globalShortcut.unregisterAll(); stopShare(); try { phone && phone.stop(); } catch {} try { const m = mediaProc; mediaProc = null; m && m.removeAllListeners('exit'); m && m.kill(); } catch {} });
 app.on('window-all-closed', () => app.quit());

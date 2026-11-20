@@ -42,6 +42,71 @@ public static class KlonIcon {
     } finally { DeleteObject(hb); }
   }
   static string Png(Image img) { using (var ms = new MemoryStream()) { img.Save(ms, ImageFormat.Png); return Convert.ToBase64String(ms.ToArray()); } }
+
+  // Bounding box of the visible pixels and how much of it is filled.
+  static Rectangle Box(Bitmap b, out double fill) {
+    int x0 = b.Width, y0 = b.Height, x1 = -1, y1 = -1; long opaque = 0;
+    for (int y = 0; y < b.Height; y++) for (int x = 0; x < b.Width; x++)
+      if (b.GetPixel(x, y).A > 160) { opaque++; if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y; }
+    if (x1 < 0) { fill = 0; return Rectangle.Empty; }
+    var r = new Rectangle(x0, y0, x1 - x0 + 1, y1 - y0 + 1); fill = (double)opaque / (r.Width * r.Height); return r;
+  }
+  // A logo drawn on a filled square / rounded square (what Windows calls "plated").
+  public static bool IsPlate(string b64) {
+    using (var b = new Bitmap(new MemoryStream(Convert.FromBase64String(b64)))) {
+      double fill; var r = Box(b, out fill);
+      return !r.IsEmpty && fill > 0.86 && r.Width > b.Width * 0.7 && Math.Abs(r.Width - r.Height) <= Math.Max(2, r.Width / 12);
+    }
+  }
+  // Cut the empty margin off a tile image and centre the logo in a size×size square.
+  public static string Trim(string file, int size) {
+    using (var src = new Bitmap(file)) {
+      double fill; var r = Box(src, out fill); if (r.IsEmpty) return "";
+      using (var dst = new Bitmap(size, size, PixelFormat.Format32bppArgb)) using (var g = Graphics.FromImage(dst)) {
+        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic; g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+        float k = Math.Min(size / (float)r.Width, size / (float)r.Height), w = r.Width * k, h = r.Height * k;
+        g.DrawImage(src, new RectangleF((size - w) / 2, (size - h) / 2, w, h), r, GraphicsUnit.Pixel);
+        return Png(dst);
+      }
+    }
+  }
 }
 '@
-try { [KlonIcon]::Get($Aid, $Size) } catch { '' }
+# Store apps: the Apps folder hands out their icon on a coloured square ("plated"). Their package also
+# ships the bare logo ("altform-unplated", what the taskbar shows), so use that when there is one.
+function Get-Unplated([string]$aid, [int]$size) {
+  if ($aid -notmatch '^([^_!\\]+)_([a-z0-9]+)!(.+)$') { return '' }
+  $pkg = Get-AppxPackage -Name $matches[1] -ErrorAction SilentlyContinue | Where-Object { $_.PackageFamilyName -eq ($aid -split '!')[0] } | Select-Object -First 1
+  if (-not $pkg -or -not $pkg.InstallLocation) { return '' }
+  $appId = $matches[3]
+  [xml]$m = Get-Content -LiteralPath (Join-Path $pkg.InstallLocation 'AppxManifest.xml') -Raw -Encoding UTF8
+  $app = @($m.Package.Applications.Application) | Where-Object { $_.Id -eq $appId } | Select-Object -First 1
+  if (-not $app) { return '' }
+  $ve = $app.ChildNodes | Where-Object { $_.LocalName -eq 'VisualElements' } | Select-Object -First 1
+  if (-not $ve) { return '' }
+  $b = ''
+  $logo = $ve.Square44x44Logo
+  if ($logo) {
+    $dir = Join-Path $pkg.InstallLocation ([IO.Path]::GetDirectoryName($logo)); $base = [IO.Path]::GetFileNameWithoutExtension($logo)
+    # e.g. AppList.targetsize-64_altform-unplated.png — the smallest one at least as big as asked, else the biggest
+    $c = Get-ChildItem -LiteralPath $dir -Filter "$base.targetsize-*_altform-unplated.png" -ErrorAction SilentlyContinue |
+      ForEach-Object { if ($_.Name -match 'targetsize-(\d+)_altform-unplated\.png$') { [pscustomobject]@{ n = [int]$matches[1]; f = $_.FullName } } } | Sort-Object n
+    $pick = ($c | Where-Object { $_.n -ge $size } | Select-Object -First 1); if (-not $pick) { $pick = $c | Select-Object -Last 1 }
+    if ($pick) { $b = [Convert]::ToBase64String([IO.File]::ReadAllBytes($pick.f)) }
+  }
+  # Some apps (WhatsApp…) draw even their "unplated" icon on a square. Their tile image is the bare logo
+  # with a wide margin: trim that and use it instead.
+  if (-not $b -or [KlonIcon]::IsPlate($b)) {
+    $tile = $ve.Square150x150Logo
+    if ($tile) {
+      $dir = Join-Path $pkg.InstallLocation ([IO.Path]::GetDirectoryName($tile)); $base = [IO.Path]::GetFileNameWithoutExtension($tile)
+      $t = Get-ChildItem -LiteralPath $dir -Filter "$base.scale-*.png" -ErrorAction SilentlyContinue |
+        ForEach-Object { if ($_.Name -match '\.scale-(\d+)\.png$') { [pscustomobject]@{ n = [int]$matches[1]; f = $_.FullName } } } | Sort-Object n | Select-Object -Last 1
+      if ($t) { $tb = [KlonIcon]::Trim($t.f, $size); if ($tb -and -not [KlonIcon]::IsPlate($tb)) { $b = $tb } }
+    }
+  }
+  return $b
+}
+$b = ''; try { $b = Get-Unplated $Aid $Size } catch {}
+if (-not $b) { try { $b = [KlonIcon]::Get($Aid, $Size) } catch {} }
+$b
