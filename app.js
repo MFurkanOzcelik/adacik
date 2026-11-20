@@ -356,7 +356,7 @@ function relayed(n) {
 let waHold = 0, waContentAt = 0;
 const recentMsgs = new Map();   // "app|title|body" → when, to show a message relayed twice only once
 function onNotif(raw) {
-  if (S.settings.notifs === false) return;
+  if (S.settings.notifs === false || raw.aid === 'com.adacik.app') return;   // our own (the timer's): the island already said it
   const n = relayed(raw), isWa = /whatsapp/i.test(n.app || '');
   if (isWa && WA_EMPTY.test((n.title || '').trim()) && !(n.body || '').trim()) {   // the placeholder
     if (Date.now() - waContentAt < 6000) return;   // the real message is already here

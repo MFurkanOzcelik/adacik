@@ -2,7 +2,7 @@
   "name": "adacik",
   "productName": "Adacık",
   "version": "1.3.0",
-  "description": "Windows için yüzen, Dynamic Island tarzı akıllı çentik",
+  "description": "A floating, Dynamic Island–style notch for Windows",
   "author": "MFurkanOzcelik",
   "main": "main.js",
   "scripts": {

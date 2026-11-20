@@ -25,6 +25,9 @@ app.commandLine.appendSwitch('disable-gpu-rasterization');
 const RES = __dirname.replace(/app\.asar$/, 'app.asar.unpacked');
 // keep settings, notes and clipboard in the same folder for the installed app and `npm start` (the folder kept its first name)
 app.setPath('userData', require('path').join(app.getPath('appData'), 'klon-notch'));
+// Windows names a notification after the Start menu shortcut with the same AppUserModelId: the installer's
+// shortcut uses the appId, so the app has to say it's that one (otherwise toasts say "Electron").
+app.setAppUserModelId('com.adacik.app');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');

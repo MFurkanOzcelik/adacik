@@ -2,23 +2,51 @@
 
 <img src="docs/banner.svg" alt="Adacık: the island growing from its closed state to a notification, then to the tools panel" width="100%">
 
-<br>
+<h3>A small island at the top of your screen.</h3>
 
-[![Release](https://img.shields.io/github/v/release/MFurkanOzcelik/adacik?style=for-the-badge&color=f08a24&label=release)](https://github.com/MFurkanOzcelik/adacik/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/MFurkanOzcelik/adacik/total?style=for-the-badge&color=2a2a2e&label=downloads)](https://github.com/MFurkanOzcelik/adacik/releases)
-![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0b0b0c?style=for-the-badge&logo=windows11&logoColor=white)
-[![License](https://img.shields.io/badge/license-MIT-2a2a2e?style=for-the-badge)](LICENSE)
+<p>Hover over it and your music, notifications, clipboard, phone<br>and a few dozen handy tools are one click away.</p>
 
-**A small island that lives at the top of your screen.** Hover over it and your music, notifications, clipboard, phone and a few dozen handy tools are one click away.
+<a href="https://github.com/MFurkanOzcelik/adacik/releases/latest"><img src="https://img.shields.io/badge/Download_for_Windows-f08a24?style=for-the-badge&logo=windows11&logoColor=white" alt="Download for Windows" height="38"></a>
 
-[**⬇ Download**](https://github.com/MFurkanOzcelik/adacik/releases/latest) · [Features](#-features) · [Install](#-install) · [Privacy](#-privacy) · [Security](#-security)
+<br><br>
+
+[![Release](https://img.shields.io/github/v/release/MFurkanOzcelik/adacik?style=flat-square&color=f08a24&label=release)](https://github.com/MFurkanOzcelik/adacik/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/MFurkanOzcelik/adacik/total?style=flat-square&color=2a2a2e&label=downloads)](https://github.com/MFurkanOzcelik/adacik/releases)
+![Windows 10 | 11](https://img.shields.io/badge/Windows-10%20%7C%2011-2a2a2e?style=flat-square)
+![No telemetry](https://img.shields.io/badge/telemetry-none-2a2a2e?style=flat-square)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2a2a2e?style=flat-square)](LICENSE)
+
+<sub><a href="#-features">Features</a> &nbsp;·&nbsp; <a href="#-install">Install</a> &nbsp;·&nbsp; <a href="#-privacy">Privacy</a> &nbsp;·&nbsp; <a href="#-security">Security</a> &nbsp;·&nbsp; <a href="#-development">Development</a></sub>
 
 </div>
 
-> [!NOTE]
-> Adacık ("little island" in Turkish) is a Dynamic Island–style companion for Windows 10 and 11. **Its interface is in Turkish.**
+<br>
 
----
+> [!NOTE]
+> **Adacık** — Turkish for *"little island"* — is a Dynamic Island–style companion for Windows 10 and 11. Its interface is in Turkish.
+
+<br>
+
+<table>
+<tr>
+<td align="center" width="33%"><h3>🫧</h3><b>Out of the way</b><br><sub>A slim pill with the time and battery. It grows only when you hover, or when something happens.</sub></td>
+<td align="center" width="33%"><h3>⚡</h3><b>Light</b><br><sub>Around 1% of one CPU core while idle. Notifications reach the island in about 0.3 s.</sub></td>
+<td align="center" width="33%"><h3>🔒</h3><b>Private</b><br><sub>No account, no telemetry, no API keys. Your data stays on your PC.</sub></td>
+</tr>
+</table>
+
+## 📸 A closer look
+
+<table>
+<tr>
+<td width="50%"><img src="docs/shot-notifs.png" alt="Notifications page"><p align="center"><sub><b>Notifications</b> — real app icons, history by day, filters</sub></p></td>
+<td width="50%"><img src="docs/shot-timer.png" alt="Timer"><p align="center"><sub><b>Timer &amp; stopwatch</b> — keeps counting inside the closed island</sub></p></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/shot-qr.png" alt="QR codes"><p align="center"><sub><b>QR codes</b> — dot styles, colours, logo and label; PNG / SVG</sub></p></td>
+<td width="50%"><img src="docs/shot-fx.png" alt="Currency converter"><p align="center"><sub><b>Currency converter</b> — just type <code>100 usd to try</code></sub></p></td>
+</tr>
+</table>
 
 ## ✨ Features
 
@@ -26,99 +54,101 @@
 <tr>
 <td width="50%" valign="top">
 
-### 🔔 Notifications
-Windows notifications appear in the island with the sending app's **real icon** and a **light that circles the island** in that app's colour. Click one to open the notifications page: history grouped by day, filter by app, open the app.
-
-Messages relayed by **Phone Link** (WhatsApp, Instagram…) are shown as the app they came from, with the chat and the message, instead of WhatsApp's empty *"You may have new messages"*.
+#### 🏝 In the island
+- **Notifications** with the app's real icon and a light that circles the island in its colour
+- **Screenshot island** — after <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>: read the text, shelve it, send it to your phone
+- **Download & copy progress**, Bluetooth headphones and battery, camera / microphone indicator
+- **Volume & brightness** indicator, now playing, timer ring
+- **Do Not Disturb** — a tile, and it follows Windows' own Focus mode
 
 </td>
-<td width="50%"><img src="docs/shot-notifs.png" alt="Notifications page"></td>
-</tr>
-<tr>
-<td width="50%"><img src="docs/shot-timer.png" alt="Timer"></td>
 <td width="50%" valign="top">
 
-### ⏱ Timer and stopwatch
-Presets, a label, sound and notification. While the panel is closed the countdown keeps running as a small ring inside the island.
-
-### 🌙 Do Not Disturb
-A tile switches it on and off; it also follows Windows' own Do Not Disturb / Focus. Notifications are kept quietly in the history, and when it ends the island tells you what came in meanwhile.
+#### 📱 Connected
+- **Phone link** — scan a QR code, no app needed: send and receive files and messages, **end-to-end encrypted**, several phones, each with a name
+- **WhatsApp through Phone Link** — the chat and the text instead of *"You may have new messages"*
+- **Media** — control whatever plays, artwork-tinted glass, **scrollable synced lyrics**
+- **Calendar** — Windows Calendar and ICS links, reminders
 
 </td>
 </tr>
 <tr>
 <td width="50%" valign="top">
 
-### 💱 Currency converter
-Type `100 usd to try` or `50 euro kaç tl` and get the result instantly. Rates are updated daily.
-
-### 🔳 QR codes
-Stylish QR codes from a link or any text: dot style, corners, colours, logo and label. Save as PNG or SVG.
+#### 🧰 Tools
+- Clipboard history with images, search and pins
+- File shelf · Notes · Calculator · Text tools
+- Translation (25 languages) · Currency converter · QR codes
+- Weather with a 6-day forecast · Colour picker · OCR
+- System monitor · Start menu · Quick launch · Keep awake
 
 </td>
-<td width="50%"><img src="docs/shot-fx.png" alt="Currency converter"><br><br><img src="docs/shot-qr.png" alt="QR codes"></td>
+<td width="50%" valign="top">
+
+#### 🎨 Yours
+- Notch or capsule shape · dark / light theme
+- Accent colour from Windows or your wallpaper
+- Tiles on several pages, **resized by dragging their edge**
+- Media card pinned to the side, hide in full screen
+- Pin the panel open with <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd>
+- **Automatic updates** from this repository
+
+</td>
 </tr>
 </table>
 
-### And more
-
-| | | |
-|---|---|---|
-| 🎵 **Media** — control whatever plays in Windows, a frosted background tinted by the album art, **scrollable synced lyrics** | 📱 **Phone link** — scan a QR code, no app to install: send and receive files (several at once) and messages; name your phones | 📸 **Screenshot island** — after <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> the shot appears in the island: read its text, keep it on the shelf, send it to your phone |
-| 📋 **Clipboard history** — text and images, search, pinning | 📂 **File shelf** — drop files on the island, take them out later | 📅 **Calendar** — Windows Calendar and ICS links, reminders |
-| ⬇ **Downloads and copies** — progress right in the island | 🎧 **Bluetooth headphones** — connected, battery level, low-battery warning | 🟢 **Camera / microphone indicator** — which app is using them |
-| ⛅ **Weather** — current conditions next to your tiles, 6-day forecast | 🌐 **Translation** — language detection, 25 languages | 🎨 **Colour picker**, 🖥 **system monitor**, 🔊 volume and brightness indicator |
-| 🧮 Calculator, notes, text tools, quick launch, start menu | ☕ Keep the screen awake | 🔄 **Automatic updates** from this repository's releases |
-
-**Make it yours:** capsule or notch shape · dark / light theme · accent colour from Windows or your wallpaper · arrange tiles across pages and resize them by dragging their edge · pin the media card to the side · hide in full screen · pin the panel open (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd>)
-
----
-
 ## 📦 Install
 
-1. Download **`Adacik-Setup-x.x.x.exe`** from the [latest release](https://github.com/MFurkanOzcelik/adacik/releases/latest). It adds Start menu and desktop shortcuts, installs over an older version and keeps your settings.
-2. Run it. The island appears at the top of the screen; move the mouse over it.
+1. Download **`Adacik-Setup-x.x.x.exe`** from the **[latest release](https://github.com/MFurkanOzcelik/adacik/releases/latest)**.
+2. Run it. The island appears at the top of your screen — move the mouse over it.
 
-> [!NOTE]
-> The installer isn't code-signed, so Windows SmartScreen may warn you: **More info → Run anyway**.
+The installer adds Start menu and desktop shortcuts, installs over an older version and keeps your settings. New versions download in the background and install when you quit (you can turn this off in Settings).
 
 > [!TIP]
-> To see notifications in the island, allow **notification access** when Windows asks on first start.
+> Allow **notification access** when Windows asks on first start, so notifications can appear in the island.
 
-Updates are downloaded in the background and installed when you quit the app (or right away from the island). You can turn this off in Settings.
+> [!NOTE]
+> The installer isn't code-signed, so SmartScreen may warn you: **More info → Run anyway**.
 
 ## 🔒 Privacy
 
-There is **no account, no telemetry, no analytics and no API key** in the app. Settings, notes, clipboard history and notification history stay on your computer (`%APPDATA%\klon-notch`).
+**No account. No telemetry. No analytics. No API keys.** Settings, notes, clipboard and notification history stay on your computer, in `%APPDATA%\klon-notch`.
 
-Only these public, key-less services are contacted, and only for the feature that needs them:
+- **Phone link** works only inside your local Wi-Fi network and is end-to-end encrypted (NaCl secretbox). Every phone has its own key, every QR code pairs a single phone, every request carries a single-use token.
+- **Notifications, camera / microphone use, downloads, Bluetooth and Do Not Disturb** are read from Windows on your PC and never sent anywhere. Text recognition uses Windows' built-in, offline OCR.
+
+<details>
+<summary><b>Every online service the app uses, and what it sends</b></summary>
+<br>
+
+Only public, key-less services, and only for the feature that needs them:
 
 | Feature | Service | What is sent |
 |---|---|---|
 | Weather card | [Open-Meteo](https://open-meteo.com) | the coordinates of your city; the name you type when you search for a city |
-| Weather, automatic location | [ipwho.is](https://ipwho.is), fallback [GeoJS](https://www.geojs.io) | your connection's IP address (city-level location). Not used once you pick a city; the card can be turned off |
-| Synced lyrics (off by default) | [LRCLIB](https://lrclib.net) | the song's title, artist and length |
-| Currency converter | [ExchangeRate-API](https://www.exchangerate-api.com) | nothing but the request for today's rates |
-| Translation (when you translate) | Google Translate, [MyMemory](https://mymemory.translated.net) | the text you translate |
+| Weather, automatic location | [ipwho.is](https://ipwho.is), fallback [GeoJS](https://www.geojs.io) | your connection's IP address (city-level location) — not used once you pick a city; the card can be turned off |
+| Synced lyrics *(off by default)* | [LRCLIB](https://lrclib.net) | the song's title, artist and length |
+| Currency converter | [ExchangeRate-API](https://www.exchangerate-api.com) | only the request for today's rates |
+| Translation | Google Translate, [MyMemory](https://mymemory.translated.net) | the text you translate |
 | Calendar links you add | the server of that link | a normal request for the calendar |
 | Updates | GitHub (this repository's releases) | a normal download request |
 
-Everything else stays local:
-
-- **Phone link** works only inside your **local Wi-Fi network** and is **end-to-end encrypted** (NaCl secretbox). Every phone has its own key, every QR code pairs one phone only, and every request carries a single-use token. Files never go through the internet.
-- **Notifications, camera/microphone use, downloads, Bluetooth and Do Not Disturb** are read from Windows on your computer and never sent anywhere.
-- **Screenshot text recognition** uses Windows' built-in OCR, offline.
+</details>
 
 ## 🛡 Security
 
-- The windows only show the app's own pages: navigation, pop-ups and web views are blocked, and the app's internal commands are only accepted from those pages.
-- A strict Content Security Policy blocks scripts that aren't part of the app, and every piece of outside text (notifications, clipboard, messages, calendar events, song titles…) is escaped before it's shown.
-- The phone link server serves no data without the phone's key; the page itself is sent with a strict CSP and security headers.
+- The app's windows only ever show the app itself: navigation, pop-ups and web views are blocked, and its internal commands are accepted only from its own pages.
+- A strict Content Security Policy blocks foreign scripts, and all outside text (notifications, clipboard, messages, calendar events, song titles…) is escaped before it's shown.
+- The phone link serves nothing without the phone's key; its page is sent with a strict CSP and security headers.
 - No dependency shipped with the app has a known vulnerability (`npm audit --omit=dev`).
 
-Found a security problem? Please report it privately through GitHub's **[Report a vulnerability](https://github.com/MFurkanOzcelik/adacik/security/advisories/new)** instead of opening a public issue.
+Found a vulnerability? Please report it privately via **[Report a vulnerability](https://github.com/MFurkanOzcelik/adacik/security/advisories/new)** rather than in a public issue.
 
 ## 🛠 Development
+
+<details>
+<summary><b>Build from source</b></summary>
+<br>
 
 ```bash
 git clone https://github.com/MFurkanOzcelik/adacik.git
@@ -128,8 +158,12 @@ npm start          # run in development mode
 npm run dist       # build the installer into dist/
 ```
 
-Built with Electron. The Windows side (media session, volume, notifications, camera/microphone, downloads, Bluetooth, Do Not Disturb) is read through Windows' own APIs by a small C# helper, `helper/helper.cs`, compiled on install with the C# compiler that ships with Windows (.NET Framework 4). OCR, calendar and app icons use small PowerShell scripts.
+Built with Electron. The Windows side — media session, volume, notifications, camera / microphone, downloads, Bluetooth, Do Not Disturb — is read through Windows' own APIs by a small C# helper (`helper/helper.cs`), compiled on install with the C# compiler that ships with Windows (.NET Framework 4). OCR, calendar and app icons use small PowerShell scripts.
 
-## 📄 License
+</details>
 
-[MIT](LICENSE)
+<br>
+
+<div align="center">
+<sub>Released under the <a href="LICENSE">MIT license</a> · Made with ☕ in Türkiye</sub>
+</div>
